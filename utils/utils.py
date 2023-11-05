@@ -57,7 +57,12 @@ def assertFilter(type:str,urls:List[str])->List[str]:
         #去重
         return list(set(urls))
 
-
+class RowDataSetter():
+    '''
+    用于将数据放入数据库中
+    规范化数据格式
+    '''
+    pass
 
 
 
