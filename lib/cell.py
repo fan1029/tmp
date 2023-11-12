@@ -104,7 +104,7 @@ class TagElementCell(ElementCell):
             data = json.loads(data)
         tmp = TagElementCell()
         tmp.__dict__ = data
-        tmp.values = [Tag('', '', False).unserialize(i) for i in tmp.values]
+        tmp.values = [Tag(content='').unserialize(i) for i in tmp.values]
         return tmp
 
 
@@ -144,7 +144,7 @@ class ImageElementCell(ElementCell):
 if __name__ == '__main__':
     pass
     a = TextElementCell()
-    a.set('123123123123123', 'marked', size='small')
+    a.set('123123123123123')
     print(a)
     print(a.type)
     # c = a.serialize()

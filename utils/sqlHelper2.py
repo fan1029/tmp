@@ -38,14 +38,14 @@ class PostgresConnectionPool:
     async def release_connection(self, connection):
         try:
             await self.connection_pool.release(connection)
-            print("Connection released successfully")
+            # print("Connection released successfully")
         except Exception as e:
             print(f"Error releasing connection to pool: {e}")
 
     async def close_all_connections(self):
         try:
             await self.connection_pool.close()
-            print("All connections closed successfully")
+            # print("All connections closed successfully")
         except Exception as e:
             print(f"Error closing all connections: {e}")
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import  Union
 from enum import Enum
-from models.cell import ElementCell
+from lib.cell import ElementCell
 
 
 @dataclass
@@ -10,6 +10,9 @@ class Asset:
     assetFiltered: str
     ip: Union[str, None] = field(default=None)
     port: Union[str, None] = field(default=None)
+
+    def serialize(self):
+        return self.__dict__
 
 
 @dataclass

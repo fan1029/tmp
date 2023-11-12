@@ -26,7 +26,6 @@ class PostgresConnectionPool:
                 port=self.port,
                 database=self.dbname
             )
-            print("Connection pool created successfully")
         except Exception as e:
             print(f"Error creating connection pool: {e}")
 
@@ -41,14 +40,12 @@ class PostgresConnectionPool:
     def release_connection(self, connection):
         try:
             self.connection_pool.putconn(connection)
-            print("Connection released successfully")
         except Exception as e:
             print(f"Error releasing connection to pool: {e}")
 
     def close_all_connections(self):
         try:
             self.connection_pool.closeall()
-            print("All connections closed successfully")
         except Exception as e:
             print(f"Error closing all connections: {e}")
 
@@ -68,8 +65,6 @@ class PostgresConnectionContextManager:
         self.conn.commit()
         self.pool.release_connection(self.conn)
 
-def aaa():
-    print(1)
 
 # # Example usage
 if __name__ == "__main__":

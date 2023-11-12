@@ -1,6 +1,5 @@
-from utils import store
 from utils.sqlHelper import PostgresConnectionContextManager
-
+import json
 
 class Notify():
 
@@ -12,19 +11,19 @@ class Notify():
     def info(self,info):
         message ={"info": info,"type":"info"}
         with PostgresConnectionContextManager() as cur:
-            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'info', message,self.project_id))
+            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'info', json.dumps(message),self.project_id))
 
 
     def waring(self,waring):
         message ={"info": waring,"type":"waring"}
         with PostgresConnectionContextManager() as cur:
-            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'waring', message,self.project_id))
+            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'waring', json.dumps(message),self.project_id))
 
 
     def error(self,error):
         message ={"info": error,"type":"error"}
         with PostgresConnectionContextManager() as cur:
-            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'error', message,self.project_id))
+            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'error', json.dumps(message),self.project_id))
 
     def highLightRow(self,asset_original,color,project_id,tag_id):
         message={"asset_original":asset_original,
@@ -34,7 +33,7 @@ class Notify():
                  "type":"highLightRow"
                  }
         with PostgresConnectionContextManager() as cur:
-            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'highLightRow', message,self.project_id))
+            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'highLightRow', json.dumps(message),self.project_id))
 
     def addTag(self,project_id,tag_name,urls:list):
         # todo: addTag
@@ -44,4 +43,4 @@ class Notify():
                  "urls":urls
                  }
         with PostgresConnectionContextManager() as cur:
-            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'addTag', message,self.project_id))
+            cur.execute('INSERT INTO notify (notifier, type, message,project_id) VALUES (%s,%s,%s,%s)', (self.notifier, 'addTag', json.dumps(message),self.project_id))

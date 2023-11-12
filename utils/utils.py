@@ -1,5 +1,5 @@
 from hashlib import md5
-from store import Store
+from utils.store import Store
 from typing import List,Type
 
 #md5加密

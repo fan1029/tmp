@@ -55,13 +55,13 @@ async def createProject(data:CreateProjectRequest):
         cur.execute(query,(data.name,))
         rows = cur.fetchone()
         if rows:
-            return CreateProjectResponse(data.name,data.description,False,datetime.datetime.now())
+            return CreateProjectResponse(data.name,data.description,False,str(datetime.datetime.now()))
     #创建项目
     query = "INSERT INTO project (name,description,create_time) VALUES (%s,%s,%s) RETURNING id"
     # query="INSERT INTO project (name,description,create_time) VALUES (%s,%s,%s)"
     with PostgresConnectionContextManager() as cur:
         cur.execute(query,(data.name,data.description,datetime.datetime.now()))
-    return CreateProjectResponse(data.name,data.description,True,datetime.datetime.now())
+    return CreateProjectResponse(data.name,data.description,True,str(datetime.datetime.now()))
 
 
 @dataclass

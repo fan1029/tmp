@@ -17,6 +17,13 @@ class RedisPool(object):
         return self.pool
 
 class Store():
+    __instance = None
+    #单例模式
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super(Store, cls).__new__(cls)
+        return cls.__instance
+
     def __init__(self):
         self.redis_pool = RedisPool('127.0.0.1', 6379, 0, None).get_conn()
 
