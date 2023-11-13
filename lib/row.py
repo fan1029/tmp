@@ -67,6 +67,10 @@ class RowManagerProxy():
         for _ in self.rowManagers:
             _.cellClear(columnName)
 
+    def rowColorSet(self, color: str):
+        for _ in self.rowManagers:
+            _.rowColorSet(color)
+
     def cellAdd(self, columnName: str, cell: BaseElement):
         for _ in self.rowManagers:
             _.cellAdd(columnName, cell)
@@ -189,6 +193,7 @@ class RowManager():
     def submitOneRow(self, column: Column):
         cellJson = column.value.serialize()
         submitOneRowDB(self.pluginName, self.asset.assetOriginal, column.name, cellJson)
+        self.submitRowColor()
         # with PostgresConnectionContextManager() as db_cursor:
         #     # 检查存不存在对应的行，有则更新，没有则添加
         #     # inject vul
