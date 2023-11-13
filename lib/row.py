@@ -1,8 +1,10 @@
+from lib.common import submitOneRowDB, submitRowColorDB, getAllColumnDB, initColumnValueDB
 from type.types import Asset, Column, Color
 from utils.sqlHelper import PostgresConnectionContextManager
 from typing import List, Union
 from type.elements import BaseElement
 from plugins.common import getAssetOriginal
+from type.enums import COLOR
 from lib.cell import TextElementCell, TagElementCell, ImageElementCell
 
 
@@ -69,7 +71,7 @@ class RowManagerProxy():
         for _ in self.rowManagers:
             _.cellAdd(columnName, cell)
 
-    def submitRow(self, columnName: str=''):
+    def submitRow(self, columnName: str = ''):
         for _ in self.rowManagers:
             _.submitRow(columnName)
 
@@ -79,7 +81,7 @@ class RowManager():
         self.pluginName = pluginName.lower()
         # self.asset: List[Asset] = []
         self.asset: Asset = asset
-        self.color: Union[Color, None] = None
+        self.color: COLOR = COLOR.DEFAULT
         self.column: List[Column] = []
         # self.initAsset(asset_filtered)
         self.getAllColumn()
@@ -87,13 +89,13 @@ class RowManager():
     def getAllColumn(self):
         # 获取所有column_attribute表下plugin_name为self.pluginName的记录,使用row_to_json
         # 将查询到的数据转换为json格式
-        with PostgresConnectionContextManager() as db_cursor:
-            db_cursor.execute(
-                "SELECT row_to_json(t) FROM (SELECT * FROM column_attribute WHERE plugin_name=%s) as t",
-                (self.pluginName,))
-            a = db_cursor.fetchall()
+        # with PostgresConnectionContextManager() as db_cursor:
+        #     db_cursor.execute(
+        #         "SELECT row_to_json(t) FROM (SELECT * FROM column_attribute WHERE plugin_name=%s) as t",
+        #         (self.pluginName,))
+        #     a = db_cursor.fetchall()
         # 遍历a中的数据赋值给Column类,将每个新的对象添加到self.column中
-        for _ in a:
+        for _ in getAllColumnDB(self.pluginName):
             _ = _[0]
             _.pop('plugin_name')
             self.column.append(Column(**_))
@@ -115,12 +117,19 @@ class RowManager():
                 return _
 
     def initColumnValue(self, column: Column):
-        with PostgresConnectionContextManager() as db_cursor:
-            # inject vul
-            db_cursor.execute(
-                "SELECT " + column.name + " FROM " + self.pluginName + '_table' + " WHERE asset_original = %s",
-                (self.asset.assetOriginal,))
-            a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
+        # with PostgresConnectionContextManager() as db_cursor:
+        #     # inject vul
+        #     db_cursor.execute(
+        #         "SELECT " +
+        #         column.name +
+        #         " FROM " +
+        #         self.pluginName +
+        #         '_table' +
+        #         " WHERE asset_original = %s",
+        #         (self.asset.assetOriginal,
+        #          ))
+        #     a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
+            a = initColumnValueDB(self.pluginName, self.asset.assetOriginal,column.name)
             if a is None:
                 raise Exception('数据库中没有对应的记录')
             if a[0]:
@@ -161,24 +170,59 @@ class RowManager():
         column = self.getColumn(columnName)
         column.value.add(cell)
 
+    def rowColorSet(self, color: str):
+        for i in COLOR:
+            if i.name == color:
+                if i.value > self.color.value:
+                    self.color = i
+                    break
+                else:
+                    break
+
+    def submitRowColor(self):
+        asset_original = self.asset.assetOriginal
+        color = self.color.name
+        submitRowColorDB(asset_original, color)
+        # with PostgresConnectionContextManager() as cur:
+        #     cur.execute("UPDATE asset SET row_color = %s WHERE asset_original = %s",(color,asset_original))
+
     def submitOneRow(self, column: Column):
         cellJson = column.value.serialize()
-        with PostgresConnectionContextManager() as db_cursor:
-            # 检查存不存在对应的行，有则更新，没有则添加
-            # inject vul
-            db_cursor.execute("SELECT * FROM " + self.pluginName + '_table' + " WHERE asset_original = %s",
-                              (self.asset.assetOriginal,))
-            a = db_cursor.fetchone()
-            if a:
-                db_cursor.execute(
-                    "UPDATE " + self.pluginName + '_table' + " SET " + column.name + " = %s WHERE asset_original = %s",
-                    (cellJson, self.asset.assetOriginal))
-            else:
-                db_cursor.execute(
-                    "INSERT INTO " + self.pluginName + '_table' + " (asset_original," + column.name + ") VALUES (%s,%s)",
-                    (self.asset.assetOriginal, cellJson))
+        submitOneRowDB(self.pluginName, self.asset.assetOriginal, column.name, cellJson)
+        # with PostgresConnectionContextManager() as db_cursor:
+        #     # 检查存不存在对应的行，有则更新，没有则添加
+        #     # inject vul
+        #     db_cursor.execute(
+        #         "SELECT * FROM " +
+        #         self.pluginName +
+        #         '_table' +
+        #         " WHERE asset_original = %s",
+        #         (self.asset.assetOriginal,
+        #          ))
+        #     a = db_cursor.fetchone()
+        #     if a:
+        #         db_cursor.execute(
+        #             "UPDATE " +
+        #             self.pluginName +
+        #             '_table' +
+        #             " SET " +
+        #             column.name +
+        #             " = %s WHERE asset_original = %s",
+        #             (cellJson,
+        #              self.asset.assetOriginal))
+        #     else:
+        #         db_cursor.execute(
+        #             "INSERT INTO " +
+        #             self.pluginName +
+        #             '_table' +
+        #             " (asset_original," +
+        #             column.name +
+        #             ") VALUES (%s,%s)",
+        #             (self.asset.assetOriginal,
+        #              cellJson))
 
     def submitRow(self, columnName: str = ''):
+
         if columnName:
             column = self.getColumn(columnName)
             self.submitOneRow(column)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from enum import Enum
+from type.enums import TAG_SIZE, TAG_THEME, TAG_ROUND, TEXT_SIZE, TEXT_TYPE, TEXT_TAG, TOOL_TIP_THEME, POPOVER_THEME, ALERT_TYPE, ALERT_THEME, NOTIFICATION_TYPE, NOTIFICATION_POS
 from typing import List, Union
 
 
@@ -8,28 +8,23 @@ class BaseElement:
     content: str
 
     def serialize(self):
-        return self.__dict__
+        # 遍历每个属性的值
+        bak = self.__dict__.copy()
+        for f in vars(self):
+            if isinstance(self.__dict__[f], BaseElement):
+                self.__dict__[f] = self.__dict__[f].serialize()
+        tmp = self.__dict__.copy()
+        self.__dict__ = bak
+        return tmp
 
     def unserialize(self, data):
         self.__dict__ = data
         return self
 
 
-class TAG_SIZE(Enum):
-    SMALL = 'small'
-    DEFAULT = 'default'
-    LARGE = 'large'
 
-class TAG_THEME(Enum):
-    DARK = 'dark'
-    LIGHT = 'light'
-    PLAIN = 'plain'
-    DEFAULT = ''
 
-class TAG_ROUND(Enum):
-    TRUE = True
-    FALSE = False
-    DEFAULT = False
+
 
 
 @dataclass
@@ -37,38 +32,83 @@ class Tag(BaseElement):
     '''
     TODO:添加枚举类
     '''
-    size: str = field(default=TAG_SIZE.SMALL)  # small default large
-    theme: str = field(default=TAG_SIZE.DEFAULT)  # dark light plain
-    round: bool = field(default=TAG_ROUND.DEFAULT)
-    # hover: bool= field(default=False)
+    size: str = field(default=TAG_SIZE.SMALL.value)  # small default large
+    theme: str = field(default=TAG_SIZE.DEFAULT.value)  # dark light plain
+    round: bool = field(default=TAG_ROUND.DEFAULT.value)
+    hover: Union[None,BaseElement]= field(default=None)
+    click: Union[None,BaseElement]= field(default=None)
 
-class TEXT_SIZE(Enum):
-    SMALL = 'small'
-    DEFAULT = 'default'
-    LARGE = 'large'
 
-class TEXT_TYPE(Enum):
-    PRIMARY = 'primary'
-    SUCCESS = 'success'
-    INFO = 'info'
-    WARNING = 'warning'
-    DANGER = 'danger'
-    DEFAULT = ''
 
-class TEXT_TAG(Enum):
-    BOLD = 'bold'
-    DEL = 'del'
-    MARKED = 'marked'
-    NONE = ''
 
 @dataclass
 class Text(BaseElement):
     size: str = field(default=TEXT_SIZE.SMALL)  # small default large
-    type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT)  # primary success info warning danger
-    tag: Union[str, None] = field(default=TEXT_TAG.NONE)  # bold del marked
+    type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
+    tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
+    hover: Union[None,BaseElement]= field(default=None)
+    click: Union[None,BaseElement]= field(default=None)
 
 
 @dataclass
 class Image(BaseElement):
     width: Union[str, None] = field(default=None)
     height: Union[str, None] = field(default=None)
+
+
+
+
+
+
+
+@dataclass
+class ToolTip(BaseElement):
+    '''
+    悬浮消息
+    '''
+    multipleLines: bool = field(default=False)
+    theme: str = field(default=TOOL_TIP_THEME.LIGHT.value)
+    placement: str = field(default=TOOL_TIP_THEME.DEFAULT.value)
+
+
+
+@dataclass
+class Popover(BaseElement):
+    '''
+    弹出气泡
+    '''
+    title: str = field(default='')
+    theme: str = field(default=POPOVER_THEME.LIGHT.value)
+    placement: str = field(default=POPOVER_THEME.DEFAULT.value)
+
+
+
+
+@dataclass
+class Alert(BaseElement):
+    '''
+    弹出提示
+    '''
+    type: str = field(default=ALERT_TYPE.INFO.value)
+    theme: str = field(default=ALERT_THEME.DEFAULT.value)
+    showIcon: bool = field(default=False)
+    center: bool = field(default=False)
+
+
+
+@dataclass
+class Notification(BaseElement):
+    '''
+    通知
+    '''
+    title: str = field(default='')
+    autoClose: bool = field(default=True)
+    type: str = field(default=NOTIFICATION_TYPE.INFO.value)
+    pos: str = field(default=NOTIFICATION_POS.DEFAULT.value)
+
+
+if __name__ == '__main__':
+    class A:
+        a=1
+    print(A.a)
+    print(NOTIFICATION_TYPE.DEFAULT.value)

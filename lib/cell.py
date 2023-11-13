@@ -26,8 +26,17 @@ class ElementCell(ABC):
     def add(self, data):
         pass
 
+    # def serialize(self):
+    #     return json.dumps(self.__dict__)
     def serialize(self):
-        return json.dumps(self.__dict__)
+        # 遍历每个属性的值
+        bak = self.__dict__.copy()
+        for f in vars(self):
+            if isinstance(self.__dict__[f], ElementCell):
+                self.__dict__[f] = self.__dict__[f].serialize()
+        tmp = self.__dict__.copy()
+        self.__dict__ = bak
+        return tmp
 
     @staticmethod
     def unserialize(data):

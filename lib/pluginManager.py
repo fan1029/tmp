@@ -2,7 +2,7 @@
 
 import os
 import pickle
-from plugins.abstractPlugin import AbstractPlugin
+# from plugins.abstractPlugin import AbstractPlugin
 
 
 class PluginManager():
@@ -17,19 +17,6 @@ class PluginManager():
     def __init__(self):
         pass
 
-    # def pluginClassRegister(self, pluginName: str):
-    #     '''
-    #     注册插件类
-    #     :param pluginName:
-    #     :return:
-    #     '''
-    #
-    #     # 类装饰器，将获取的类添加到__pluginList中
-    #     def wrapper(cls):
-    #         self.__pluginList[pluginName.lower()] = {"class": cls, "fun": None, "obj": []}
-    #         return cls
-    #
-    #     return wrapper
     @staticmethod
     def pluginClassRegister(pluginName: str):
         '''
@@ -40,7 +27,8 @@ class PluginManager():
 
         # 类装饰器，将获取的类添加到__pluginList中
         def wrapper(cls):
-            PluginManager.__pluginList[pluginName.lower()] = {"class": cls, "fun": None, "obj": []}
+            PluginManager.__pluginList[pluginName.lower()] = {
+                "class": cls, "fun": None, "obj": []}
             return cls
 
         return wrapper
@@ -76,7 +64,7 @@ class PluginManager():
             nameList.append(k)
         return nameList
 
-    def pluginOnLoad(self)->None:
+    def pluginOnLoad(self) -> None:
         '''
         加载插件
         :param pluginName:
@@ -104,7 +92,7 @@ class PluginManager():
         # 从插件列表中删除插件,删除插件文件,调用插件的onUnload方法
         pass
 
-    def getPlugin(self, pluginName) -> AbstractPlugin:
+    def getPlugin(self, pluginName):
         '''
         获取插件类
         :param pluginName:
@@ -112,7 +100,7 @@ class PluginManager():
         '''
         return self.__pluginList[pluginName.lower()]['class']
 
-    def getPluginRunFunction(self, pluginName) -> object:
+    def getPluginRunFunction(self, pluginName):
         '''
         获取插件远程调用函数
         :param pluginName:

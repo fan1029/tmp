@@ -2,7 +2,7 @@ import random
 import time
 from typing import List, Union
 import pickle
-from lib.funRegister import FunRegister
+from lib.pluginManager import PluginManager
 from utils.store import Store
 from utils.utils import md5Encode
 from type.types import Asset
@@ -200,8 +200,8 @@ class AbstractPlugin():
                     a.push(_.serialize())  # 推送任务
 
         elif self.runMode == 'check':  # 使用第三方扫描软件，需要一开始就将所有资产推送到队列中,用该方法轮询结果。
-            funReg = FunRegister()
-            tmpFun = funReg.getFun(self.pluginName)  # 调用注册函数列表获取函数
+            pluginManager = PluginManager()
+            tmpFun = pluginManager.getPluginRunFunction(self.pluginName)  # 调用注册函数列表获取函数
             if not self.runLocal:
                 a = boost(self.pluginName.lower(), broker_kind=BrokerEnum.REDIS_STREAM, concurrent_num=1)(tmpFun)
             else:

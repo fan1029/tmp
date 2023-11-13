@@ -2,13 +2,12 @@ import sys
 sys.path.append('..')
 sys.path.append('../..')
 import time
-from lib.pluginManager import PluginManager
 from plugins.abstractPlugin import AbstractPlugin
 from plugins.Plugin_Goby.gobyTypes import ScanModel, AssetSearchModel, GobyAsset, Options, OptionsAssetSearch, \
     Vulnerability, PluginInfo
 from multiprocessing import Process
 from plugins.Plugin_Goby.common import runScan, checkProgress, getStatisticsData, assetSearch, stopScan, dataStore
-from type.elements import Tag, Text, Image
+from type.elements import Tag, Text, Popover
 from utils.store import Store
 import nb_log
 import os
@@ -16,11 +15,7 @@ import random
 from lib.row import RowManagerProxy
 
 
-# def run_function():
-#     Plugin_Goby
 
-
-# @PluginManager.pluginClassRegister('plugin_goby')
 class Plugin_Goby(AbstractPlugin):
     pluginName = 'Plugin_Goby'
     author = 'maple'
@@ -170,7 +165,7 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
                 if tagsDict:
                     productList = [i.get('product') for i in tagsDict]
                     rowManager.cellClear('tag')
-                    tagList = [Tag(content=i, round=True, theme='dark') for i in productList]
+                    tagList = [Tag(content=i, round=True, theme='dark',click=Popover(content=i,title='test')) for i in productList]
                     rowManager.cellListSet('tag', tagList)
             # rowManager.submitRow(columnName='tag')
             # vul
@@ -204,17 +199,16 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
 
 
 if __name__ == '__main__':
-    a = PluginManager()
-    print(a.getList())
+    # print(a.getList())
     # print(funReg.getFunList())
     # print(funReg.getFunList())
     # 对filter函数进行测试
-    # a = Plugin_Goby(["47.106.90.142"], {})
+    a = Plugin_Goby(["10.1.72.121"], {})
     # func = a.getFunctionCheck()
     # a = boost(a.pluginName, broker_kind=BrokerEnum.REDIS_STREAM, concurrent_num=1)(func)
     # a.clear()
     # a = Plugin_Goby(["10.1.99.100"], {})
-    # a.onLoad()
-    # a.runAll()
+    a.onLoad()
+    a.runAll()
     # a.getSelfQueueName()
     # func = a.getFunctionCheck()
