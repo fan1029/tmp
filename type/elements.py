@@ -5,7 +5,13 @@ from typing import List, Union
 
 @dataclass
 class BaseElement:
+    #elementName属性为继承的子类的类名
     content: str
+    elementName: str = field(default='')
+
+    def __post_init__(self):
+        self.elementName = self.__class__.__name__
+
 
     def serialize(self):
         # 遍历每个属性的值
@@ -108,7 +114,6 @@ class Notification(BaseElement):
 
 
 if __name__ == '__main__':
-    class A:
-        a=1
-    print(A.a)
-    print(NOTIFICATION_TYPE.DEFAULT.value)
+    #测试element的序列化和反序列化
+    a = Tag(content='test')
+    print(a)

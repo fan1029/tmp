@@ -1,36 +1,66 @@
 from ..project import project_blue
 from dataclasses import dataclass
 from utils.sqlHelper import PostgresConnectionContextManager
-from quart_schema import  validate_request, validate_response
+from quart_schema import validate_request, validate_response
 import datetime
+from typing import List
 import asyncpg
 import json
 import asyncio
 
 
+@dataclass
+class GetProjectListRequest:
+    pass
+
+
+@dataclass
+class Project:
+    id: int
+    name: str
+    description: str
+    create_time: datetime.datetime
+    tags: None
+
+@dataclass
+class GetProjectListResponse:
+    status: int
+    data: List[Project]
+
+
 @project_blue.route('/getProjectList')
 async def getProjectList():
+    query = "SELECT row_to_json(project) FROM project"
+    with PostgresConnectionContextManager() as cur:
+        cur.execute(query)
+        rows = cur.fetchall()
+    projectList = []
+    for i in rows:
+        projectList.append(Project(**i[0]))
+    return GetProjectListResponse(200, projectList)
 
-    pass
+
 
 @dataclass
 class GetProjectInfoRequest:
-    id:int
+    id: int
+
 
 @dataclass
 class GetProjectInfoResponse:
-    id:int
-    name:str
-    description:str
-    create_time:datetime.datetime
-    tags:list
+    id: int
+    name: str
+    description: str
+    create_time: datetime.datetime
+    tags: list
+
 
 @project_blue.post('/getProjectInfo')
 @validate_request(GetProjectInfoRequest)
-async def getProjectInfo(data:GetProjectInfoRequest):
+async def getProjectInfo(data: GetProjectInfoRequest):
     query = "SELECT row_to_json(project) FROM project WHERE id=%s"
     with PostgresConnectionContextManager() as cur:
-        cur.execute(query,(data.id,))
+        cur.execute(query, (data.id,))
         rows = cur.fetchone()
         print(rows)
         return GetProjectInfoResponse(**rows[0])
@@ -38,45 +68,48 @@ async def getProjectInfo(data:GetProjectInfoRequest):
 
 @dataclass
 class CreateProjectRequest:
-    name:str
-    description:str
+    name: str
+    description: str
+
 
 @dataclass
 class CreateProjectResponse(CreateProjectRequest):
-    status:bool
-    create_time:str
+    status: bool
+    create_time: str
+
 
 @project_blue.post('/createProject')
 @validate_request(CreateProjectRequest)
-async def createProject(data:CreateProjectRequest):
-    #检查是否存在同名项目
+async def createProject(data: CreateProjectRequest):
+    # 检查是否存在同名项目
     query = "SELECT * FROM project WHERE name=%s"
     with PostgresConnectionContextManager() as cur:
-        cur.execute(query,(data.name,))
+        cur.execute(query, (data.name,))
         rows = cur.fetchone()
         if rows:
-            return CreateProjectResponse(data.name,data.description,False,str(datetime.datetime.now()))
-    #创建项目
+            return CreateProjectResponse(data.name, data.description, False, str(datetime.datetime.now()))
+    # 创建项目
     query = "INSERT INTO project (name,description,create_time) VALUES (%s,%s,%s) RETURNING id"
     # query="INSERT INTO project (name,description,create_time) VALUES (%s,%s,%s)"
     with PostgresConnectionContextManager() as cur:
-        cur.execute(query,(data.name,data.description,datetime.datetime.now()))
-    return CreateProjectResponse(data.name,data.description,True,str(datetime.datetime.now()))
+        cur.execute(query, (data.name, data.description, datetime.datetime.now()))
+    return CreateProjectResponse(data.name, data.description, True, str(datetime.datetime.now()))
 
 
 @dataclass
 class DeleteProjectRequest:
-    id:int
+    id: int
+
 
 @dataclass
 class DeleteProjectResponse:
-    status:bool
+    status: bool
 
 
 @project_blue.post('/deleteProject')
 @validate_request(DeleteProjectRequest)
-async def deleteProject(data:DeleteProjectRequest):
+async def deleteProject(data: DeleteProjectRequest):
     query = "DELETE FROM project WHERE id=%s"
     with PostgresConnectionContextManager() as cur:
-        cur.execute(query,(data.id,))
+        cur.execute(query, (data.id,))
     return DeleteProjectResponse(True)
