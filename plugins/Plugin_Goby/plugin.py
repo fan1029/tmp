@@ -18,6 +18,7 @@ from lib.row import RowManagerProxy
 
 class Plugin_Goby(AbstractPlugin):
     pluginName = 'Plugin_Goby'
+    tableName = 'plugin_goby_table'
     author = 'maple'
     version = '1.0'
     description = 'Goby扫描器插件-启动时请不要使用代理,否则会导致启动失败'
@@ -182,9 +183,9 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
                     portList = [(v.get('port') + ':' + v.get('protocol')) for v in portDict.values()]
                     portTagList = [Tag(content=i, theme='plain') for i in portList]
                     rowManager.cellListSet('port', portTagList)
-                    rowManager.submitRow()
-                    #########################
-                    dataStore(_)  # 存储扫描数据
+            rowManager.submitRow()
+            #########################
+            dataStore(_)  # 存储扫描数据
 
     if res:
         if int(msg) == 100:

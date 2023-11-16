@@ -14,6 +14,7 @@ from plugins.common import pluginLock, pluginUnlock, pushUndoQueue, removeUndoQu
 
 class AbstractPlugin():
     pluginName='AbstractPlugin'
+    tableName=pluginName+'_table'
     author = 'maple'
     version = '1.0'
     description = ''

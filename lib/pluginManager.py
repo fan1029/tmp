@@ -119,5 +119,27 @@ class PluginManager():
         self.__pluginList[pluginName.lower()]['obj'].append(obj)
         return obj
 
+    def getPluginTable(self, pluginName: str):
+        '''
+        获取插件表名
+        :param pluginName:
+        :return:
+        '''
+        tableName = self.__pluginList[pluginName.lower()]['class'].tableName
+        columnDict = self.__pluginList[pluginName.lower()]['class'].columnDict
+        return {tableName: columnDict}
+
+    def getPluginTableList(self):
+        '''
+        获取所有插件表名列表
+        :return:
+        '''
+        tableList = []
+        pluginNameList = self.getPluginNameList()
+        for pluginName in pluginNameList:
+            tableList.append(self.getPluginTable(pluginName))
+        return tableList
+
+
     def getList(self):
         return self.__pluginList

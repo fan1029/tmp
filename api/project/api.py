@@ -4,9 +4,6 @@ from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
 from typing import List
-import asyncpg
-import json
-import asyncio
 
 
 @dataclass
@@ -21,6 +18,7 @@ class Project:
     description: str
     create_time: datetime.datetime
     tags: None
+    plugin_used:list
 
 @dataclass
 class GetProjectListResponse:
@@ -52,7 +50,8 @@ class GetProjectInfoResponse:
     name: str
     description: str
     create_time: datetime.datetime
-    tags: list
+    tags: None
+    plugin_used: list
 
 
 @project_blue.post('/getProjectInfo')
