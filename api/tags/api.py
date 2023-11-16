@@ -201,6 +201,7 @@ class GetTagUsedPluginColumnsResponse():
 class GetTagAssetDataRequest():
     project_id: int
     tag_id: int
+    tag_name: str
     size: int
     page: int
     sortColumn: str
@@ -233,6 +234,12 @@ async def getAssetData(data: GetTagAssetDataRequest):
     获取指定tag标签内的所有资产数据，支持翻页，size为每页的数量，page为页数,sort排序方式，asc为升序，desc为降序
     :return:
     '''
+    if data.tag_id==-1:
+        #根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
     a1=sqlInjectCheck(data.sortColumn)
     a2 = sqlInjectCheck(data.sort)
     if not a1 or not a2:
@@ -257,29 +264,32 @@ async def getAssetData(data: GetTagAssetDataRequest):
         joins = "JOIN " + joins
     # 完整的查询语句
     query = f"""
-    SELECT
-        {' , '.join(select_clauses)}
-    FROM
-        {plugin_table[0]}
-    {joins}
-    JOIN
-        asset a
-    ON
-        {plugin_table[0]}.asset_original = a.asset_original
-    WHERE
-        %s = ANY(a.tag_ids)
-        AND a.project_id=%s
-    ORDER BY
-        {plugin_table[0]}.{data.sortColumn} {data.sort}
-    LIMIT
-        %s
-    OFFSET
-        %s;
+    SELECT row_to_json(t) FROM (
+        SELECT
+            {' , '.join(select_clauses)}
+        FROM
+            {plugin_table[0]}
+        {joins}
+        JOIN
+            asset a
+        ON
+            {plugin_table[0]}.asset_original = a.asset_original
+        WHERE
+            %s = ANY(a.tag_ids)
+            AND a.project_id=%s
+        ORDER BY
+            {plugin_table[0]}.{data.sortColumn} {data.sort}
+        LIMIT
+            %s
+        OFFSET
+            %s) t;
     """
     with PostgresConnectionContextManager() as cur:
         # 参数只包含数据值
         params = (data.tag_id, data.project_id, data.size, (data.page - 1) * data.size)
         cur.execute(query, params)
         rows = cur.fetchall()
+    if rows:
+        rows = rows[0]
 
     return GetTagAssetDataResponse(True, rows, 'ok', data)
