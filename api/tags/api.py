@@ -1,6 +1,6 @@
 from ..tags import tag_blue
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
@@ -55,7 +55,8 @@ class CreateTagRequest():
 @dataclass
 class CreateTagResponse():
     status: bool
-    tag_id: int
+    msg: str
+    data: Union[CreateTagRequest, dict]
 
 
 @tag_blue.post('/createTag')
@@ -67,7 +68,7 @@ async def createTag(data: CreateTagRequest):
         cur.execute(query, (data.project_id, data.tag_name))
         rows = cur.fetchone()
         if rows:
-            return CreateTagResponse(False, rows[0])
+            return CreateTagResponse(False, '重复命名',data=data)
     # 如果不存在则插入
     query = "INSERT INTO taginfo (project_id,tag_name,create_time,description,create_user) VALUES (%s,%s,%s,%s,%s) RETURNING id"
     with PostgresConnectionContextManager() as cur:
@@ -77,18 +78,19 @@ async def createTag(data: CreateTagRequest):
         tag_id = rows[0]
         for asset in data.asset:
             # 判断asset存不存在表中
-            cur.execute("SELECT id FROM asset WHERE asset_original=%s", (asset,))
+            cur.execute("SELECT id FROM asset WHERE asset_original=%s AND project_id =%s", (asset,data.project_id))
             rows = cur.fetchone()
+            ##优化流程
             if rows:
                 # 如果存在asset则使用update更新表中的tag_ids
-                cur.execute("UPDATE asset SET tag_ids = tag_ids || %s WHERE asset_original = %s",
-                            (tag_id, asset))
+                cur.execute("UPDATE asset SET tag_ids = tag_ids || %s WHERE asset_original = %s AND project_id=%s",
+                            (tag_id, asset,data.project_id))
             else:
                 # 如果不存在asset则使用insert插入表中
                 cur.execute(
-                    "INSERT INTO asset (asset_original,project_id,tag_ids) VALUES (%s,%s,%s) ON CONFLICT (asset_original) DO NOTHING",
+                    "INSERT INTO asset (asset_original,project_id,tag_ids) VALUES (%s,%s,%s)",
                     (asset, data.project_id, [tag_id]))
-    return CreateTagResponse(True, tag_id)
+    return CreateTagResponse(True, '创建成功',data=data)
 
 
 @dataclass
@@ -152,10 +154,13 @@ async def getTagAssetList(data: GetTagAssetListRequest):
 class GetTagUsedPluginColumnsRequest():
     project_id: int
     tag_id: int
+
+
 @dataclass
 class PluginColumn():
     plugin_name: str
     column_config: dict
+
 
 @dataclass
 class GetTagUsedPluginColumnsResponse():
@@ -164,20 +169,21 @@ class GetTagUsedPluginColumnsResponse():
     tag_id: int
     data: List[PluginColumn]
 
+
 @tag_blue.post('/getTagUsedPluginColumns')
 @validate_request(GetTagUsedPluginColumnsRequest)
 async def getTagUsedPlugin(data: GetTagUsedPluginColumnsRequest):
     with PostgresConnectionContextManager() as cur:
-        cur.execute("SELECT used_plugin FROM taginfo WHERE id=%s AND project_id=%s",(data.tag_id,data.project_id))
+        cur.execute("SELECT used_plugin FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
         rows = cur.fetchall()
         res = rows[0][0]
     plugin_names = []
     if not res:
-        return GetTagUsedPluginColumnsResponse(False,data.project_id,data.tag_id,[])
+        return GetTagUsedPluginColumnsResponse(False, data.project_id, data.tag_id, [])
     for _ in res:
         plugin_names.append(_)
     print(plugin_names)
-    columnsConfigList=[]
+    columnsConfigList = []
     for i2 in plugin_names:
         print(i2)
         with PostgresConnectionContextManager() as cur:
@@ -186,5 +192,4 @@ async def getTagUsedPlugin(data: GetTagUsedPluginColumnsRequest):
             rows[0][0]['plugin_name'] = i2
             columnsConfigList.append(rows[0][0])
 
-    return GetTagUsedPluginColumnsResponse(True,data.project_id,data.tag_id,columnsConfigList)
-
+    return GetTagUsedPluginColumnsResponse(True, data.project_id, data.tag_id, columnsConfigList)

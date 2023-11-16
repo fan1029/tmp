@@ -136,3 +136,42 @@ async def deleteProject(data: DeleteProjectRequest):
     with PostgresConnectionContextManager() as cur:
         cur.execute(query, (data.id,))
     return DeleteProjectResponse(True)
+
+@dataclass
+class getProjectTagRequest:
+    projectId: int
+
+@dataclass
+class TagInfo:
+    id: int
+    project_id: int
+    tag_name: str
+    create_time: datetime.datetime
+    description: str
+    create_user: str
+    used_plugin: list
+
+@dataclass
+class getProjectTagResponse:
+    status: bool
+    msg:str
+    data: List[TagInfo]
+
+
+
+
+@project_blue.post('/getProjectTag')
+@validate_request(getProjectTagRequest)
+async def getProjectTag(data: getProjectTagRequest):
+    query = "SELECT row_to_json(t) FROM (SELECT * FROM taginfo WHERE project_id=%s) as t"
+    try:
+        with PostgresConnectionContextManager() as cur:
+            cur.execute(query, (data.projectId,))
+            rows = cur.fetchall()
+    except:
+        return getProjectTagResponse(False,'数据请求失败', [])
+    newRows = [_[0] for _ in rows]
+    # print(newRows)
+    return getProjectTagResponse(True,'success', newRows)
+
+

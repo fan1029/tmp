@@ -2,11 +2,11 @@ from plugins import importPlugins
 from funboost import boost, BrokerEnum
 import socket
 from lib.pluginManager import PluginManager
-importPlugins()
-pluginReg = PluginManager()
+
 
 
 if __name__ == '__main__':
+    importPlugins()
     pluginManager = PluginManager()
     NameList = pluginManager.getPluginNameList()
     for _ in NameList:
