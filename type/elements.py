@@ -7,7 +7,7 @@ from typing import List, Union
 class BaseElement:
     #elementName属性为继承的子类的类名
     content: str
-    elementName: str = field(default='')
+    elementType: str = field(default='')
 
     def __post_init__(self):
         self.elementName = self.__class__.__name__
@@ -38,11 +38,13 @@ class Tag(BaseElement):
     '''
     TODO:添加枚举类
     '''
+
     size: str = field(default=TAG_SIZE.SMALL.value)  # small default large
     theme: str = field(default=TAG_SIZE.DEFAULT.value)  # dark light plain
     round: bool = field(default=TAG_ROUND.DEFAULT.value)
     hover: Union[None,BaseElement]= field(default=None)
     click: Union[None,BaseElement]= field(default=None)
+    elementType: str = field(default='Tag')
 
 
 
@@ -54,12 +56,14 @@ class Text(BaseElement):
     tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
     hover: Union[None,BaseElement]= field(default=None)
     click: Union[None,BaseElement]= field(default=None)
+    elementType: str = field(default='Text')
 
 
 @dataclass
 class Image(BaseElement):
     width: Union[str, None] = field(default=None)
     height: Union[str, None] = field(default=None)
+    elementType: str = field(default='Image')
 
 
 
@@ -75,6 +79,7 @@ class ToolTip(BaseElement):
     multipleLines: bool = field(default=False)
     theme: str = field(default=TOOL_TIP_THEME.LIGHT.value)
     placement: str = field(default=TOOL_TIP_THEME.DEFAULT.value)
+    elementType: str = field(default='ToolTip')
 
 
 
@@ -86,6 +91,7 @@ class Popover(BaseElement):
     title: str = field(default='')
     theme: str = field(default=POPOVER_THEME.LIGHT.value)
     placement: str = field(default=POPOVER_THEME.DEFAULT.value)
+    elementType: str = field(default='Popover')
 
 
 
@@ -99,6 +105,7 @@ class Alert(BaseElement):
     theme: str = field(default=ALERT_THEME.DEFAULT.value)
     showIcon: bool = field(default=False)
     center: bool = field(default=False)
+    elementType: str = field(default='Alert')
 
 
 
@@ -111,6 +118,7 @@ class Notification(BaseElement):
     autoClose: bool = field(default=True)
     type: str = field(default=NOTIFICATION_TYPE.INFO.value)
     pos: str = field(default=NOTIFICATION_POS.DEFAULT.value)
+    elementType: str = field(default='Notification')
 
 
 if __name__ == '__main__':

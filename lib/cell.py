@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 class ElementCell(ABC):
     def __init__(self):
         self.className = self.__class__.__name__
+        self.elementType=''
         pass
 
     @abstractmethod
@@ -50,6 +51,7 @@ class ElementCell(ABC):
 class TextElementCell(ElementCell):
     def __init__(self):
         super().__init__()
+        self.elementType='Text'
         self.values = []
         pass
 
@@ -87,6 +89,7 @@ class TagElementCell(ElementCell):
     def __init__(self):
         super().__init__()
         self.values: List[Tag] = []
+        self.elementType='Tag'
 
     def get(self):
         return self.values
@@ -121,6 +124,7 @@ class ImageElementCell(ElementCell):
     def __init__(self):
         super().__init__()
         self.values=[]
+        self.elementType='Image'
 
     def get(self):
         return self.values
