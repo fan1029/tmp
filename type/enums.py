@@ -14,16 +14,17 @@ class TAG_ROUND(Enum):
     DEFAULT = False
 
 
-class TAG_SIZE(Enum):
+
+class SIZE(Enum):
     SMALL = 'small'
     DEFAULT = 'default'
     LARGE = 'large'
 
 
-class TEXT_SIZE(Enum):
-    SMALL = 'small'
-    DEFAULT = 'default'
-    LARGE = 'large'
+# class SIZE(Enum):
+#     SMALL = 'small'
+#     DEFAULT = 'default'
+#     LARGE = 'large'
 
 
 class TEXT_TYPE(Enum):

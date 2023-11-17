@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import  Union
 from enum import Enum
-from lib.cell import ElementCell
+from lib.cellContainer import Container
 
 
 @dataclass
@@ -74,7 +74,7 @@ class Column:
     hide: bool
     label: str
     max_width: int
-    value: Union[ElementCell, None] = field(default=None)
+    value: Union[Container, None] = field(default=None)
 
 
 @dataclass

@@ -5,7 +5,7 @@ from typing import List, Union
 from type.elements import BaseElement
 from plugins.common import getAssetOriginal
 from type.enums import COLOR
-from lib.cell import TextElementCell, TagElementCell, ImageElementCell
+from lib.cellContainer import TextContainer, TagContainer, ImageContainer
 
 
 class RowManagerProxy():
@@ -83,11 +83,9 @@ class RowManagerProxy():
 class RowManager():
     def __init__(self, pluginName: str, asset: Asset):
         self.pluginName = pluginName.lower()
-        # self.asset: List[Asset] = []
         self.asset: Asset = asset
         self.color: COLOR = COLOR.DEFAULT
         self.column: List[Column] = []
-        # self.initAsset(asset_filtered)
         self.getAllColumn()
 
     def getAllColumn(self):
@@ -133,6 +131,7 @@ class RowManager():
         #         (self.asset.assetOriginal,
         #          ))
         #     a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
+            #从pluginName_table表中获取对应的cell对象
             a = initColumnValueDB(self.pluginName, self.asset.assetOriginal,column.name)
             if a is None:
                 raise Exception('数据库中没有对应的记录')

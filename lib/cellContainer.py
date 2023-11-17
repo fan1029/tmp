@@ -5,7 +5,7 @@ from copy import deepcopy
 from abc import ABC, abstractmethod
 
 
-class ElementCell(ABC):
+class Container(ABC):
     def __init__(self):
         self.className = self.__class__.__name__
         self.elementType=''
@@ -33,7 +33,7 @@ class ElementCell(ABC):
         # 遍历每个属性的值
         bak = self.__dict__.copy()
         for f in vars(self):
-            if isinstance(self.__dict__[f], ElementCell):
+            if isinstance(self.__dict__[f], Container):
                 self.__dict__[f] = self.__dict__[f].serialize()
         tmp = self.__dict__.copy()
         self.__dict__ = bak
@@ -48,7 +48,7 @@ class ElementCell(ABC):
         return tmp
 
 
-class TextElementCell(ElementCell):
+class TextContainer(Container):
     def __init__(self):
         super().__init__()
         self.elementType='Text'
@@ -79,13 +79,13 @@ class TextElementCell(ElementCell):
     def unserialize(data):
         if type(data) == str:
             data = json.loads(data)
-        tmp = TextElementCell()
+        tmp = TextContainer()
         tmp.__dict__ = data
         tmp.values = [Text('', '', '', '').unserialize(i) for i in tmp.values]
         return tmp
 
 
-class TagElementCell(ElementCell):
+class TagContainer(Container):
     def __init__(self):
         super().__init__()
         self.values: List[Tag] = []
@@ -114,13 +114,13 @@ class TagElementCell(ElementCell):
     def unserialize(data):
         if type(data) == str:
             data = json.loads(data)
-        tmp = TagElementCell()
+        tmp = TagContainer()
         tmp.__dict__ = data
         tmp.values = [Tag(content='').unserialize(i) for i in tmp.values]
         return tmp
 
 
-class ImageElementCell(ElementCell):
+class ImageContainer(Container):
     def __init__(self):
         super().__init__()
         self.values=[]
@@ -156,7 +156,7 @@ class ImageElementCell(ElementCell):
 
 if __name__ == '__main__':
     pass
-    a = TextElementCell()
+    a = TextContainer()
     a.set('123123123123123')
     print(a)
     print(a.type)
