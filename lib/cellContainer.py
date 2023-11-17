@@ -3,6 +3,7 @@ from typing import List
 from type.elements import Tag, Text,Image
 from copy import deepcopy
 from abc import ABC, abstractmethod
+from dataclasses import asdict
 
 
 class Container(ABC):
@@ -29,18 +30,19 @@ class Container(ABC):
 
     # def serialize(self):
     #     return json.dumps(self.__dict__)
-    def serialize(self):
+    def toDict(self):
         # 遍历每个属性的值
-        bak = self.__dict__.copy()
-        for f in vars(self):
-            if isinstance(self.__dict__[f], Container):
-                self.__dict__[f] = self.__dict__[f].serialize()
-        tmp = self.__dict__.copy()
-        self.__dict__ = bak
-        return tmp
+        return asdict(self)
+        # bak = self.__dict__.copy()
+        # for f in vars(self):
+        #     if isinstance(self.__dict__[f], Container):
+        #         self.__dict__[f] = self.__dict__[f].toDict()
+        # tmp = self.__dict__.copy()
+        # self.__dict__ = bak
+        # return tmp
 
     @staticmethod
-    def unserialize(data):
+    def toDataClass(data):
         data = json.loads(data)
         unserializeClass = globals()[data['className']]
         tmp = unserializeClass()
@@ -69,19 +71,19 @@ class TextContainer(Container):
     def add(self, text: Text):
         self.values.append(text)
 
-    def serialize(self):
+    def toDict(self):
         tmp = self.__dict__
         c = deepcopy(tmp['values'])
-        tmp['values'] = [i.serialize() for i in c]
+        tmp['values'] = [i.toDict() for i in c]
         return json.dumps(tmp)
 
     @staticmethod
-    def unserialize(data):
+    def toDataClass(data):
         if type(data) == str:
             data = json.loads(data)
         tmp = TextContainer()
         tmp.__dict__ = data
-        tmp.values = [Text('', '', '', '').unserialize(i) for i in tmp.values]
+        tmp.values = [Text('', '', '', '').toDataClass(i) for i in tmp.values]
         return tmp
 
 
@@ -104,19 +106,19 @@ class TagContainer(Container):
     def add(self, tag: Tag):
         self.values.append(tag)
 
-    def serialize(self):
+    def toDict(self):
         tmp = self.__dict__
         c = deepcopy(tmp['values'])
-        tmp['values'] = [i.serialize() for i in c]
+        tmp['values'] = [i.toDict() for i in c]
         return json.dumps(tmp)
 
     @staticmethod
-    def unserialize(data):
+    def toDataClass(data):
         if type(data) == str:
             data = json.loads(data)
         tmp = TagContainer()
         tmp.__dict__ = data
-        tmp.values = [Tag(content='').unserialize(i) for i in tmp.values]
+        tmp.values = [Tag(content='').toDataClass(i) for i in tmp.values]
         return tmp
 
 

@@ -1,43 +1,48 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields,is_dataclass,asdict
 from type.enums import SIZE, TAG_THEME, TAG_ROUND, SIZE, TEXT_TYPE, TEXT_TAG, TOOL_TIP_THEME, POPOVER_THEME, ALERT_TYPE, ALERT_THEME, NOTIFICATION_TYPE, NOTIFICATION_POS
 from typing import List, Union
+import json
+
+@dataclass
+class Base:
+
+    def serializeJson(obj):
+        if is_dataclass(obj):
+            return asdict(obj)
+        return obj
+
+    def toDict(self):
+        # 遍历每个属性的值
+        return asdict(self)
+
+    def toDataClass(self, data):
+        self.__dict__ = data
+        return self
 
 
 @dataclass
-class BaseElement:
+class BaseElement(Base):
     #elementName属性为继承的子类的类名
     content: str
     elementType: str = field(default='')
 
     def __post_init__(self):
-        self.elementName = self.__class__.__name__
+        self.elementType = self.__class__.__name__
 
 
-    def serialize(self):
-        # 遍历每个属性的值
-        bak = self.__dict__.copy()
-        for f in vars(self):
-            if isinstance(self.__dict__[f], BaseElement):
-                self.__dict__[f] = self.__dict__[f].serialize()
-        tmp = self.__dict__.copy()
-        self.__dict__ = bak
-        return tmp
 
-    def unserialize(self, data):
-        self.__dict__ = data
-        return self
 
 
 
 
 @dataclass
-class TagAttribute():
+class TagAttribute(Base):
     size: str = field(default=SIZE.SMALL.value)  # small default large
-    theme: str = field(default=SIZE.DEFAULT.value)  # dark light plain
+    theme: str = field(default=TAG_THEME.DEFAULT.value)  # dark light plain
     round: bool = field(default=TAG_ROUND.DEFAULT.value)
 
 @dataclass
-class Action():
+class Action(Base):
     hover: Union[None,BaseElement]= field(default=None)
     click: Union[None,BaseElement]= field(default=None)
 
@@ -57,7 +62,7 @@ class Tag(BaseElement):
     # elementType: str = field(default='Tag')
 
 @dataclass
-class TextAttribute():
+class TextAttribute(Base):
     size: str = field(default=SIZE.SMALL)  # small default large
     type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
     tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
@@ -87,7 +92,7 @@ class Image(BaseElement):
 
 
 @dataclass
-class ToolTipAttribute():
+class ToolTipAttribute(Base):
     multipleLines: bool = field(default=False)
     theme: str = field(default=TOOL_TIP_THEME.LIGHT.value)
     placement: str = field(default=TOOL_TIP_THEME.DEFAULT.value)
@@ -106,7 +111,7 @@ class ToolTip(BaseElement):
 
 
 @dataclass
-class PopoverAttribute():
+class PopoverAttribute(Base):
     theme: str = field(default=POPOVER_THEME.LIGHT.value)
     placement: str = field(default=POPOVER_THEME.DEFAULT.value)
 
@@ -123,7 +128,7 @@ class Popover(BaseElement):
 
 
 @dataclass
-class AlertAttribute():
+class AlertAttribute(Base):
     type: str = field(default=ALERT_TYPE.INFO.value)
     theme: str = field(default=ALERT_THEME.DEFAULT.value)
     showIcon: bool = field(default=False)
@@ -143,7 +148,7 @@ class Alert(BaseElement):
 
 
 @dataclass
-class NotificationAttribute:
+class NotificationAttribute(Base):
     autoClose: bool = field(default=True)
     type: str = field(default=NOTIFICATION_TYPE.INFO.value)
     pos: str = field(default=NOTIFICATION_POS.DEFAULT.value)
@@ -164,5 +169,6 @@ class Notification(BaseElement):
 
 if __name__ == '__main__':
     #测试element的序列化和反序列化
-    a = Tag(content='test')
-    print(a)
+    c = Tag(content='i', action=Action(click=Popover(content='i', title='test')))
+    # c = BaseElement('2')
+    print(c.toDict())

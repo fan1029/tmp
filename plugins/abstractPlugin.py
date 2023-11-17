@@ -2,10 +2,13 @@ import random
 import time
 from typing import List, Union
 import pickle
+
+import nb_log
+
 from lib.pluginManager import PluginManager
 from utils.store import Store
 from utils.utils import md5Encode
-from type.types import Asset
+from type.myTypes import Asset
 from lib.notify import Notify
 from funboost import boost, BrokerEnum
 from plugins.common import pluginLock, pluginUnlock, pushUndoQueue, removeUndoQueue, checkAllFinished, getComputerName, \
@@ -26,7 +29,7 @@ class AbstractPlugin():
         # self.runLocal: bool = False
         self.computerName: str = ''
         # self.pluginName: str = ''
-        self.assets: list = []
+        # self.assets: list = []
         self.store = Store()
         self.config = {}
         self.assets: List[Asset] = []
@@ -34,6 +37,7 @@ class AbstractPlugin():
         self.notify = Notify(self.pluginName, self.config.get('projectId'))  # 初始化通知类
         for _ in assets:
             self.assets.append(Asset(assetOriginal=_, assetFiltered=self.filter(_)))  # 将资产过滤后添加到assets中
+            nb_log.info(self.assets)
         for _ in self.assets:
             registerAsset(self.pluginName, _)  # 注册资产过滤前后映射关系
             self.init_plugin_table(_.assetOriginal)  # 添加资产到插件表格中。
@@ -198,7 +202,7 @@ class AbstractPlugin():
                     pushUndoQueue(self.pluginName, _)
                     runList.append(_.assetFiltered)
                     # 注意序列化
-                    a.push(_.serialize())  # 推送任务
+                    a.push(_.toDict())  # 推送任务
 
         elif self.runMode == 'check':  # 使用第三方扫描软件，需要一开始就将所有资产推送到队列中,用该方法轮询结果。
             pluginManager = PluginManager()

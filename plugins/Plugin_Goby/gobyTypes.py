@@ -1,21 +1,27 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields,asdict
 from typing import List, Union
 
 
 @dataclass
 class Base:
 
-    def serialize(self):
-        # 遍历每个属性的值
-        bak = self.__dict__.copy()
-        for f in vars(self):
-            if isinstance(self.__dict__[f], Base):
-                self.__dict__[f] = self.__dict__[f].serialize()
-        tmp = self.__dict__.copy()
-        self.__dict__ = bak
-        return tmp
 
-    def unserialize(self, data):
+    # def toDict(self):
+    #     return asdict(self)
+
+
+    def toDict(self):
+        # 遍历每个属性的值
+        return asdict(self)
+        # bak = self.__dict__.copy()
+        # for f in vars(self):
+        #     if isinstance(self.__dict__[f], Base):
+        #         self.__dict__[f] = self.__dict__[f].toDict()
+        # tmp = self.__dict__.copy()
+        # self.__dict__ = bak
+        # return tmp
+
+    def toDataclass(self, data):
         self.__dict__ = data
         return self
 
@@ -192,5 +198,5 @@ if __name__ == '__main__':
     print(a)
     c = AssetSearchModel('123')
     print(c)
-    print(c.serialize())
+    print(c.toDict())
     print(c)

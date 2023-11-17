@@ -11,8 +11,8 @@ burp0_headers = {"Content-Type": "application/json;charset=UTF-8", "Authorizatio
 
 def runScan(host: str, scanModel: ScanModel) -> tuple:
     url = "http://" + host + '/api/v1/startScan'
-    print(scanModel.serialize())
-    res = requests.post(url, headers=burp0_headers, json=scanModel.serialize())
+    print(scanModel.toDict())
+    res = requests.post(url, headers=burp0_headers, json=scanModel.toDict())
     res = json.loads(res.text)
     if res['statusCode'] == 200:
         return True, res['data']['taskId']
@@ -45,13 +45,13 @@ def assetSearch(host: str, taskId: str) -> tuple:
     url = "http://" + host + '/api/v1/assetSearch'
     searchStr = "taskId=\"" + taskId + "\" && ()"
     searchModel = AssetSearchModel(searchStr)
-    res = requests.post(url, headers=burp0_headers, json=searchModel.serialize()).json()
+    res = requests.post(url, headers=burp0_headers, json=searchModel.toDict()).json()
     if res['statusCode'] == 200:
         assetNumber = res['data']['total']['assets']
     else:
         return False, res['message']
     searchModel.options.page.size = assetNumber + 10
-    res = requests.post(url, headers=burp0_headers, json=searchModel.serialize()).json()
+    res = requests.post(url, headers=burp0_headers, json=searchModel.toDict()).json()
     if res['statusCode'] == 200:
         if res['data']['ips'] is None:
             return False,False

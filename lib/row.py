@@ -1,5 +1,5 @@
 from lib.common import submitOneRowDB, submitRowColorDB, getAllColumnDB, initColumnValueDB
-from type.types import Asset, Column, Color
+from type.myTypes import Asset, Column, Color
 from utils.sqlHelper import PostgresConnectionContextManager
 from typing import List, Union
 from type.elements import BaseElement
@@ -138,11 +138,11 @@ class RowManager():
             if a[0]:
                 # 反序列化出cell对象
                 cellClass = globals()[a[0]['className']]
-                column.value = cellClass.unserialize(a[0])
+                column.value = cellClass.toDataClass(a[0])
                 return column.value
             else:
                 # 如果没有对应的记录，则初始化一个cell对象
-                cellClass = globals()[column.type + 'ElementCell']
+                cellClass = globals()[column.type + 'Container']
                 column.value = cellClass()
                 return column.value
 
@@ -190,7 +190,7 @@ class RowManager():
         #     cur.execute("UPDATE asset SET row_color = %s WHERE asset_original = %s",(color,asset_original))
 
     def submitOneRow(self, column: Column):
-        cellJson = column.value.serialize()
+        cellJson = column.value.toDict()
         submitOneRowDB(self.pluginName, self.asset.assetOriginal, column.name, cellJson)
         self.submitRowColor()
         # with PostgresConnectionContextManager() as db_cursor:

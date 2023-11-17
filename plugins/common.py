@@ -1,7 +1,7 @@
 from typing import List, Type, Union
 from utils.store import Store
 from utils.utils import md5Encode
-from type.types import Asset
+from type.myTypes import Asset
 from utils.sqlHelper import PostgresConnectionContextManager
 import json
 import socket

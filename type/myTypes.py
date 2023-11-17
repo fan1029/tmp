@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field,asdict,is_dataclass
 from typing import  Union
 from enum import Enum
 from lib.cellContainer import Container
@@ -11,8 +11,8 @@ class Asset:
     ip: Union[str, None] = field(default=None)
     port: Union[str, None] = field(default=None)
 
-    def serialize(self):
-        return self.__dict__
+    def toDict(self):
+        return asdict(self)
 
 
 @dataclass

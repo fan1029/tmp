@@ -7,7 +7,8 @@ from plugins.Plugin_Goby.gobyTypes import ScanModel, AssetSearchModel, GobyAsset
     Vulnerability, PluginInfo
 from multiprocessing import Process
 from plugins.Plugin_Goby.common import runScan, checkProgress, getStatisticsData, assetSearch, stopScan, dataStore
-from type.elements import Tag, Text, Popover
+from type.elements import Tag, Text, Popover,Action,TagAttribute,TextAttribute
+from type.enums import SIZE, TAG_THEME, TAG_ROUND, TEXT_TYPE, TEXT_TAG
 from utils.store import Store
 import nb_log
 import os
@@ -166,7 +167,8 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
                 if tagsDict:
                     productList = [i.get('product') for i in tagsDict]
                     rowManager.cellClear('tag')
-                    tagList = [Tag(content=i, round=True, theme='dark',click=Popover(content=i,title='test')) for i in productList]
+                    # tagList = [Tag(content=i, round=True, theme='dark',click=Popover(content=i,title='test')) for i in productList]
+                    tagList = [Tag(content=i, action=Action(click=Popover(content=i,title='test'))) for i in productList]
                     rowManager.cellListSet('tag', tagList)
             # rowManager.submitRow(columnName='tag')
             # vul
@@ -181,7 +183,7 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
             if portDict is not None:
                 if portDict:
                     portList = [(v.get('port') + ':' + v.get('protocol')) for v in portDict.values()]
-                    portTagList = [Tag(content=i, theme='plain') for i in portList]
+                    portTagList = [Tag(content=i,attribute=TagAttribute(theme=TAG_THEME.PLAIN.value)) for i in portList]
                     rowManager.cellListSet('port', portTagList)
             rowManager.submitRow()
             #########################
@@ -204,7 +206,8 @@ if __name__ == '__main__':
     # print(funReg.getFunList())
     # print(funReg.getFunList())
     # 对filter函数进行测试
-    a = Plugin_Goby(["10.1.72.121"], {})
+    # from
+    a = Plugin_Goby(["10.1.72.121","10.1.99.100"], {})
     # func = a.getFunctionCheck()
     # a = boost(a.pluginName, broker_kind=BrokerEnum.REDIS_STREAM, concurrent_num=1)(func)
     # a.clear()
