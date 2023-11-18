@@ -18,7 +18,7 @@ class Base:
         return asdict(self)
 
     @staticmethod
-    def toDataClass(self, data):
+    def from_dict(self, data):
         self.__dict__ = data
         return self
 
@@ -31,6 +31,11 @@ class BaseElement(Base):
 
     def __post_init__(self):
         self.elementType = self.__class__.__name__
+
+    @classmethod
+    def from_dict(cls, data):
+        data.pop('elementType', None)
+        return cls(**data)
 
 
 @dataclass
@@ -55,7 +60,7 @@ class Tag(BaseElement):
     # size: str = field(default=SIZE.SMALL.value)  # small default large
     # theme: str = field(default=SIZE.DEFAULT.value)  # dark light plain
     # round: bool = field(default=TAG_ROUND.DEFAULT.value)
-    attribute: TagAttribute = field(default=TagAttribute())
+    # attribute: TagAttribute = field(default=TagAttribute())
     action: Action = field(default=Action())
     # hover: Union[None,BaseElement]= field(default=None)
     # click: Union[None,BaseElement]= field(default=None)
@@ -64,7 +69,7 @@ class Tag(BaseElement):
 
 @dataclass
 class TextAttribute(Base):
-    size: str = field(default=SIZE.SMALL)  # small default large
+    size: str = field(default=SIZE.SMALL.value)  # small default large
     type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
     tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
 
@@ -74,23 +79,25 @@ class Text(BaseElement):
     # size: str = field(default=SIZE.SMALL)  # small default large
     # 1.type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
     # tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
-    attribute: TextAttribute = field(default=TextAttribute())
+    # attribute: TextAttribute = field(default=TextAttribute())
     action: Action = field(default=Action())
     # hover: Union[None,BaseElement]= field(default=None)
     # click: Union[None,BaseElement]= field(default=None)
     # elementType: str = field(default='Text')
 
-
 @dataclass
-class Image(BaseElement):
+class ImageAttribute(Base):
     width: Union[str, None] = field(default=None)
     height: Union[str, None] = field(default=None)
+@dataclass
+class Image(BaseElement):
     action: Action = field(default=Action())
     # elementType: str = field(default='Image')
 
 
 @dataclass
 class TableAttribute(Base):
+    header: list
     stripe: bool = field(default=False)
     border: bool = field(default=False)
     size: str = field(default=SIZE.SMALL.value)
@@ -99,19 +106,19 @@ class TableAttribute(Base):
     max_height: str = field(default='150 px')
 
 
-@dataclass
-class Table(BaseElement):
-    '''
-    表格
-    '''
-
-    header: list
-    content: str = field(init=False)
-    attribute: TableAttribute = field(default=TableAttribute())
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.content = ''
+# @dataclass
+# class Table(BaseElement):
+#     '''
+#     表格
+#     '''
+#
+#     # header: list
+#     content: str = field(init=False)
+#     attribute: TableAttribute = field(default=TableAttribute())
+#
+#     def __post_init__(self):
+#         super().__post_init__()
+#         self.content = ''
 
 
 
@@ -208,5 +215,7 @@ if __name__ == '__main__':
     # 测试element的序列化和反序列化
     # c = Tag(content='i', action=Action(click=Popover(content='i', title='test')))
     # c = BaseElement('2')
-    c = Table((1,2))
-    print(c.toDict())
+    # c = Text('123123123123123')
+    a = BaseElement('123123123123123')
+    c = asdict(a)
+    a2 = BaseElement.from_dict(c)

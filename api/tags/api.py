@@ -296,3 +296,6 @@ async def getAssetData(data: GetTagAssetDataRequest):
         rows = rows[0]
 
     return GetTagAssetDataResponse(True, rows, 'ok', data)
+
+
+# @tag_blue.post('getAssetHeader')

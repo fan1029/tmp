@@ -1,6 +1,6 @@
 import json
 from typing import List
-from type.elements import Tag, Text, Image, Table, Row, TableAttribute
+from type.elements import Tag, Text, Image, Row, TableAttribute, TextAttribute, TagAttribute, ImageAttribute
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import asdict, is_dataclass
@@ -44,16 +44,16 @@ class Container(ABC):
         pass
 
     @staticmethod
-    def toDataClass(data):
+    def from_dict(data):
         pass
 
 
 class TextContainer(Container):
-    def __init__(self):
+    def __init__(self, TextStyle: TextAttribute = TextAttribute()):
         super().__init__()
         self.elementType = 'Text'
+        self.style = TextStyle
         self.values = []
-        pass
 
     def get(self):
         return self.values
@@ -72,23 +72,28 @@ class TextContainer(Container):
     def toJson(self):
         tmp = self.__dict__
         c = deepcopy(tmp['values'])
-        tmp['values'] = [i.toJson() for i in c]
+        s = deepcopy(tmp['style'])
+        tmp['values'] = [i.toDict() for i in c]
+        tmp['style'] = s.toDict()
+        print(tmp)
         return json.dumps(tmp)
 
     @staticmethod
-    def toDataClass(data):
+    def from_dict(data):
         if type(data) == str:
             data = json.loads(data)
-        tmp = TextContainer()
-        tmp.__dict__ = data
-        tmp.values = [Text('', '', '', '').toDataClass(i) for i in tmp.values]
+        # textStyle =
+        values = [Text.from_dict(i) for i in data['values']]
+        tmp = TextContainer(TextAttribute(**data['style']))
+        tmp.values = values
         return tmp
 
 
 class TagContainer(Container):
-    def __init__(self):
+    def __init__(self, TagStyle: TagAttribute = TagAttribute()):
         super().__init__()
         self.values: List[Tag] = []
+        self.style = TagStyle
         self.elementType = 'Tag'
 
     def get(self):
@@ -107,23 +112,25 @@ class TagContainer(Container):
     def toJson(self):
         tmp = self.__dict__
         c = deepcopy(tmp['values'])
-        tmp['values'] = [i.toJson() for i in c]
+        v = deepcopy(tmp['style'])
+        tmp['values'] = [i.toDict() for i in c]
+        tmp['style'] = v.toDict()
         return json.dumps(tmp)
 
     @staticmethod
-    def toDataClass(data):
+    def from_dict(data):
         if type(data) == str:
             data = json.loads(data)
-        tmp = TagContainer()
-        tmp.__dict__ = data
-        tmp.values = [Tag(content='').toDataClass(i) for i in tmp.values]
+        tmp = TagContainer(TagAttribute(**data['style']))
+        tmp.values = [Tag.from_dict(i) for i in tmp.values]
         return tmp
 
 
 class ImageContainer(Container):
-    def __init__(self):
+    def __init__(self, ImageStyle: ImageAttribute = ImageAttribute()):
         super().__init__()
         self.values = []
+        self.style = ImageStyle
         self.elementType = 'Image'
 
     def get(self):
@@ -139,17 +146,33 @@ class ImageContainer(Container):
     def add(self, image: Image):
         self.values.append(image)
 
+    def toJson(self):
+        tmp = self.__dict__
+        c = deepcopy(tmp['values'])
+        v = deepcopy(tmp['style'])
+        tmp['values'] = [i.toDict() for i in c]
+        tmp['style'] = v.toDict()
+        return json.dumps(tmp)
+
+    @staticmethod
+    def from_dict(data):
+        if type(data) == str:
+            data = json.loads(data)
+        tmp = ImageContainer(ImageAttribute(**data['style']))
+        tmp.values = [Image.from_dict(i) for i in tmp.values]
+        return tmp
+
 
 class TableContainer(Container):
     '''
     表格容器
     '''
 
-    def __init__(self, tableStyle: Table):
+    def __init__(self, tableStyle: TableAttribute = TagAttribute()):
         super().__init__()
         self.values = []
         self.elementType = 'Table'
-        self.tableStyle = tableStyle
+        self.style = tableStyle
 
     def get(self):
         return self.values
@@ -167,36 +190,44 @@ class TableContainer(Container):
     def toJson(self):
         tmp = self.__dict__
         c = deepcopy(tmp['values'])
-        t = deepcopy(tmp['tableStyle'])
-        # for i in c:
-            # print(i)
-            # print(is_dataclass(i))
-        tmp['values'] = [i.toJson() for i in c]
-        tmp['tableStyle'] = t.toJson()
-        print(tmp)
+        t = deepcopy(tmp['style'])
+        tmp['values'] = [i.toDict() for i in c]
+        tmp['tableStyle'] = t.toDict()
         return json.dumps(tmp)
 
-
     @staticmethod
-    def toDataClass(data):
+    def from_dict(data):
         if type(data) == str:
             data = json.loads(data)
-        tableStyleTmp = Table.toDataClass(data['tableStyle'])
+        tableStyleTmp = TableAttribute(**data['style'])
         tmp = TableContainer(tableStyleTmp)
-        tmp.__dict__ = data
-        tmp.values = [Row(content=[]).toDataClass(i) for i in tmp.values]
+        tmp.values = [Row.from_dict(i) for i in tmp.values]
         return tmp
 
 
 if __name__ == '__main__':
-    tableStyle = Table(header=["test1", "test2"], attribute=TableAttribute(showHeader=False))
-    print(tableStyle.toDict())
-    a = TableContainer(tableStyle)
-    a.set(Row(['1', '2']))
-    print(a.values)
+    tagStyle = TagAttribute()
+    a = TagContainer(tagStyle)
+    a.add(Tag('123123123123123'))
     c = a.toJson()
-    a2 = a.toDataClass(c)
+    a2 = TagContainer.toDataClass(c)
     print(a2)
+    # textStyle = TextAttribute()
+    # a = TextContainer(textStyle)
+    # c = textStyle.toDict()
+    #
+    # a.add(Text('123123123123123'))
+    # c1 = a.toJson()
+    # a2 = TextContainer.toDataClass(c1)
+    # print(a2)
+    # tableStyle = TableAttribute(showHeader=False,header=["test1", "test2"])
+    # print(tableStyle.toDict())
+    # a = TableContainer(tableStyle)
+    # a.set(Row(['1', '2']))
+    # print(a.values)
+    # c = a.toJson()
+    # a2 = a.toDataClass(c)
+    # print(a2)
     # c = a.serialize()
     # print(c)
     # a2 = TextElementCell.unserialize(c)

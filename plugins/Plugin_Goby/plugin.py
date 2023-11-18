@@ -183,7 +183,7 @@ def Plugin_Goby_Run(obj: Plugin_Goby):
             if portDict is not None:
                 if portDict:
                     portList = [(v.get('port') + ':' + v.get('protocol')) for v in portDict.values()]
-                    portTagList = [Tag(content=i,attribute=TagAttribute(theme=TAG_THEME.PLAIN.value)) for i in portList]
+                    portTagList = [Tag(content=i) for i in portList]
                     rowManager.cellListSet('port', portTagList)
             rowManager.submitRow()
             #########################

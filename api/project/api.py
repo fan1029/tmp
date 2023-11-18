@@ -4,6 +4,7 @@ from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
 from typing import List
+from lib.pluginManager import PluginManager
 
 
 @dataclass
@@ -172,5 +173,27 @@ async def getProjectTag(data: getProjectTagRequest):
     newRows = [_[0] for _ in rows]
     # print(newRows)
     return getProjectTagResponse(True,'success', newRows)
+
+
+@dataclass
+class getProjectHeaderRequest:
+    projectId: int
+
+@project_blue.post('getProjectHeader')
+async def getProjectHeader(data: getProjectHeaderRequest):
+    query = "SELECT plugin_used FROM project WHERE id=%s"
+    with PostgresConnectionContextManager() as cur:
+        cur.execute(query, (data.projectId,))
+        rows = cur.fetchone()
+        print(rows)
+    if rows:
+        plugin_array = rows[0]
+        pm = PluginManager()
+        tl = pm.getPluginTableList()
+        for _ in tl:
+            if _['plugin_name'] in plugin_array:
+                return _['column']
+
+
 
 

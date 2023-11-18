@@ -138,7 +138,7 @@ class RowManager():
             if a[0]:
                 # 反序列化出cell对象
                 cellClass = globals()[a[0]['className']]
-                column.value = cellClass.toDataClass(a[0])
+                column.value = cellClass.from_dict(a[0])
                 return column.value
             else:
                 # 如果没有对应的记录，则初始化一个cell对象
