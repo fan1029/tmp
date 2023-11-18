@@ -190,7 +190,7 @@ class RowManager():
         #     cur.execute("UPDATE asset SET row_color = %s WHERE asset_original = %s",(color,asset_original))
 
     def submitOneRow(self, column: Column):
-        cellJson = column.value.toDict()
+        cellJson = column.value.toJson()
         submitOneRowDB(self.pluginName, self.asset.assetOriginal, column.name, cellJson)
         self.submitRowColor()
         # with PostgresConnectionContextManager() as db_cursor:

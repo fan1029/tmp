@@ -1,7 +1,9 @@
-from dataclasses import dataclass, field, fields,is_dataclass,asdict
-from type.enums import SIZE, TAG_THEME, TAG_ROUND, SIZE, TEXT_TYPE, TEXT_TAG, TOOL_TIP_THEME, POPOVER_THEME, ALERT_TYPE, ALERT_THEME, NOTIFICATION_TYPE, NOTIFICATION_POS
+from dataclasses import dataclass, field, fields, is_dataclass, asdict
+from type.enums import SIZE, TAG_THEME, TAG_ROUND, SIZE, TEXT_TYPE, TEXT_TAG, TOOL_TIP_THEME, POPOVER_THEME, ALERT_TYPE, \
+    ALERT_THEME, NOTIFICATION_TYPE, NOTIFICATION_POS
 from typing import List, Union
 import json
+
 
 @dataclass
 class Base:
@@ -15,6 +17,7 @@ class Base:
         # 遍历每个属性的值
         return asdict(self)
 
+    @staticmethod
     def toDataClass(self, data):
         self.__dict__ = data
         return self
@@ -22,17 +25,12 @@ class Base:
 
 @dataclass
 class BaseElement(Base):
-    #elementName属性为继承的子类的类名
+    # elementName属性为继承的子类的类名
     content: str
-    elementType: str = field(default='')
+    elementType: str = field(init=False)
 
     def __post_init__(self):
         self.elementType = self.__class__.__name__
-
-
-
-
-
 
 
 @dataclass
@@ -41,10 +39,12 @@ class TagAttribute(Base):
     theme: str = field(default=TAG_THEME.DEFAULT.value)  # dark light plain
     round: bool = field(default=TAG_ROUND.DEFAULT.value)
 
+
 @dataclass
 class Action(Base):
-    hover: Union[None,BaseElement]= field(default=None)
-    click: Union[None,BaseElement]= field(default=None)
+    hover: Union[None, BaseElement] = field(default=None)
+    click: Union[None, BaseElement] = field(default=None)
+
 
 @dataclass
 class Tag(BaseElement):
@@ -61,12 +61,12 @@ class Tag(BaseElement):
     # click: Union[None,BaseElement]= field(default=None)
     # elementType: str = field(default='Tag')
 
+
 @dataclass
 class TextAttribute(Base):
     size: str = field(default=SIZE.SMALL)  # small default large
     type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
     tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
-
 
 
 @dataclass
@@ -89,8 +89,43 @@ class Image(BaseElement):
     # elementType: str = field(default='Image')
 
 
+@dataclass
+class TableAttribute(Base):
+    stripe: bool = field(default=False)
+    border: bool = field(default=False)
+    size: str = field(default=SIZE.SMALL.value)
+    fit: bool = field(default=True)
+    showHeader: bool = field(default=True)
+    max_height: str = field(default='150 px')
 
 
+@dataclass
+class Table(BaseElement):
+    '''
+    表格
+    '''
+
+    header: list
+    content: str = field(init=False)
+    attribute: TableAttribute = field(default=TableAttribute())
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.content = ''
+
+
+
+@dataclass
+class Row(BaseElement):
+    '''
+    表格行
+    '''
+    # elementType: str = field(default='Row')
+    content: list
+    action: Action = field(default=Action())
+
+
+############ACTION############
 @dataclass
 class ToolTipAttribute(Base):
     multipleLines: bool = field(default=False)
@@ -115,6 +150,7 @@ class PopoverAttribute(Base):
     theme: str = field(default=POPOVER_THEME.LIGHT.value)
     placement: str = field(default=POPOVER_THEME.DEFAULT.value)
 
+
 @dataclass
 class Popover(BaseElement):
     '''
@@ -133,6 +169,7 @@ class AlertAttribute(Base):
     theme: str = field(default=ALERT_THEME.DEFAULT.value)
     showIcon: bool = field(default=False)
     center: bool = field(default=False)
+
 
 @dataclass
 class Alert(BaseElement):
@@ -154,21 +191,22 @@ class NotificationAttribute(Base):
     pos: str = field(default=NOTIFICATION_POS.DEFAULT.value)
 
 
-
 @dataclass
 class Notification(BaseElement):
     '''
     通知
     '''
     title: str = field(default='')
+    attribute: NotificationAttribute = field(default=NotificationAttribute())
     # autoClose: bool = field(default=True)
-    # type: str = field(default=NOTIFICATION_TYPE.INFO.value)
+    # type: # str = field(default=NOTIFICATION_TYPE.INFO.value)
     # pos: str = field(default=NOTIFICATION_POS.DEFAULT.value)
     # elementType: str = field(default='Notification')
 
 
 if __name__ == '__main__':
-    #测试element的序列化和反序列化
-    c = Tag(content='i', action=Action(click=Popover(content='i', title='test')))
+    # 测试element的序列化和反序列化
+    # c = Tag(content='i', action=Action(click=Popover(content='i', title='test')))
     # c = BaseElement('2')
+    c = Table((1,2))
     print(c.toDict())

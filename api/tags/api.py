@@ -1,3 +1,5 @@
+import nb_log
+
 from ..tags import tag_blue
 from dataclasses import dataclass
 from typing import List, Union
@@ -284,6 +286,7 @@ async def getAssetData(data: GetTagAssetDataRequest):
         OFFSET
             %s) t;
     """
+    # nb_log.info(query)
     with PostgresConnectionContextManager() as cur:
         # 参数只包含数据值
         params = (data.tag_id, data.project_id, data.size, (data.page - 1) * data.size)
