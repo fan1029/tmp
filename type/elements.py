@@ -60,7 +60,7 @@ class Tag(BaseElement):
     # size: str = field(default=SIZE.SMALL.value)  # small default large
     # theme: str = field(default=SIZE.DEFAULT.value)  # dark light plain
     # round: bool = field(default=TAG_ROUND.DEFAULT.value)
-    # attribute: TagAttribute = field(default=TagAttribute())
+    attribute: TagAttribute = field(default=TagAttribute())
     action: Action = field(default=Action())
     # hover: Union[None,BaseElement]= field(default=None)
     # click: Union[None,BaseElement]= field(default=None)
@@ -79,7 +79,7 @@ class Text(BaseElement):
     # size: str = field(default=SIZE.SMALL)  # small default large
     # 1.type: Union[str, None] = field(default=TEXT_TYPE.DEFAULT.value)  # primary success info warning danger
     # tag: Union[str, None] = field(default=TEXT_TAG.NONE.value)  # bold del marked
-    # attribute: TextAttribute = field(default=TextAttribute())
+    attribute: TextAttribute = field(default=TextAttribute())
     action: Action = field(default=Action())
     # hover: Union[None,BaseElement]= field(default=None)
     # click: Union[None,BaseElement]= field(default=None)
@@ -96,7 +96,7 @@ class Image(BaseElement):
 
 
 @dataclass
-class TableAttribute(Base):
+class EL_TableAttribute(Base):
     header: list
     stripe: bool = field(default=False)
     border: bool = field(default=False)

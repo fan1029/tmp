@@ -13,7 +13,7 @@ from utils.store import Store
 import nb_log
 import os
 import random
-from lib.row import RowManagerProxy
+from lib.rowManager import RowManagerProxy
 
 
 

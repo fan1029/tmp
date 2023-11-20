@@ -5,7 +5,6 @@ def getProjectUsedPlugins(project_id: int) -> list:
     with PostgresConnectionContextManager() as cur:
         cur.execute("SELECT plugin_used FROM project WHERE id=%s", (project_id,))
         rows = cur.fetchall()
-        print(rows)
         res = rows[0][0]
     plugin_names = []
     if not res:

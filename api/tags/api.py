@@ -7,6 +7,8 @@ from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
 from ..common import getProjectUsedPlugins, sqlInjectCheck
+from lib.table import Table
+from lib.row import Row
 import json
 
 
@@ -208,19 +210,9 @@ class GetTagAssetDataRequest():
     page: int
     sortColumn: str
     sort: str
+    current_table: List[str]
 
 
-def getTagUsedPlugins(project_id, tag_id):
-    with PostgresConnectionContextManager() as cur:
-        cur.execute("SELECT used_plugin FROM taginfo WHERE id=%s AND project_id=%s", (tag_id, project_id))
-        rows = cur.fetchall()
-        res = rows[0][0]
-    plugin_names = []
-    if not res:
-        return []
-    for _ in res:
-        plugin_names.append(_)
-    return plugin_names
 
 @dataclass
 class GetTagAssetDataResponse():
@@ -251,10 +243,15 @@ async def getAssetData(data: GetTagAssetDataRequest):
     pm = PluginManager()
     tableInfoList = pm.getPluginTableList()
     tableListUsed = {}
+    if not data.current_table:
+        data.current_table = getProjectUsedPlugins(data.project_id)
+    current_table = [_+'_table' for _ in data.current_table]
     for _ in tableInfoList:
         tmp = _.popitem()
-        plugin_table.append(tmp[0])
-        tableListUsed[tmp[0]] = list(tmp[1].keys())
+        if tmp[0] in current_table:
+            plugin_table.append(tmp[0])
+            tableListUsed[tmp[0]] = list(tmp[1].keys())
+    nb_log.info(plugin_table)
     select_clauses = [f"{plugin_table[0]}.asset_original"]  # 首先选择第一个表的 asset_original
     for table in plugin_table:
         select_clauses.extend([f"{table}.{col}" for col in tableListUsed[table]])
@@ -284,7 +281,7 @@ async def getAssetData(data: GetTagAssetDataRequest):
         LIMIT
             %s
         OFFSET
-            %s) t;
+            %s )t;
     """
     # nb_log.info(query)
     with PostgresConnectionContextManager() as cur:
@@ -292,10 +289,66 @@ async def getAssetData(data: GetTagAssetDataRequest):
         params = (data.tag_id, data.project_id, data.size, (data.page - 1) * data.size)
         cur.execute(query, params)
         rows = cur.fetchall()
+    # if rows:
+    #     rows = rows[0]
+    resData=[]
+    for _ in rows:
+        _=_[0]
+        tmp = {'asset_original': _['asset_original'], 'columnInfo': []}
+        for k,v in _.items():
+            if k !='asset_original':
+                v['column_name'] = k
+                tmp['columnInfo'].append(v)
+        resData.append(tmp)
+
+
+
+    return GetTagAssetDataResponse(True, resData, 'ok', data)
+
+
+@tag_blue.post('/getAssetData2')
+@validate_request(GetTagAssetDataRequest)
+async def getAssetData2(data: GetTagAssetDataRequest):
+    '''
+    获取指定tag标签内的所有资产数据，支持翻页，size为每页的数量，page为页数,sort排序方式，asc为升序，desc为降序
+    :return:
+    '''
+    if data.tag_id==-1:
+        #根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
+    if data.tag_name =='':
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT tag_name FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
+            rows = cur.fetchone()
+            data.tag_name = rows[0]
+    a1=sqlInjectCheck(data.sortColumn)
+    a2 = sqlInjectCheck(data.sort)
+    if not a1 or not a2:
+        return GetTagAssetDataResponse(False, [], 'sql注入', data)
+    from lib.pluginManager import PluginManager
+    pm = PluginManager()
+    if not data.current_table:
+        data.current_table = getProjectUsedPlugins(data.project_id)
+    table = Table(data.current_table)
+    query = f"""
+    SELECT asset_original,id FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_original {data.sort} LIMIT %s OFFSET %s 
+    """
+    with PostgresConnectionContextManager() as cur:
+        # 参数只包含数据值
+        params = (data.project_id, data.tag_id, data.size, (data.page - 1) * data.size)
+        cur.execute(query, params)
+        rows = cur.fetchall()
     if rows:
-        rows = rows[0]
+        print(rows)
+        for _ in rows:
+            row = Row(_[0],_[1], table.getColumnList())
+            table.addRow(row)
+    resData = table.generateTable()
 
-    return GetTagAssetDataResponse(True, rows, 'ok', data)
 
+    #
 
-# @tag_blue.post('getAssetHeader')
+    return GetTagAssetDataResponse(True, resData, 'ok', data)

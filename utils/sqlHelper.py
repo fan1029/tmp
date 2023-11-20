@@ -51,7 +51,7 @@ class PostgresConnectionPool:
 
 
 # 写一个上面数据库连接类的上下文管理类
-pool1= PostgresConnectionPool(1, 135, "dev", "postgres", "123456", "localhost", "5432")
+pool1= PostgresConnectionPool(2, 300, "dev", "postgres", "123456", "localhost", "5432")
 class PostgresConnectionContextManager:
     def __init__(self):
         self.pool = pool1

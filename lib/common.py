@@ -52,8 +52,24 @@ def getAllColumnDB(pluginName):
         a = db_cursor.fetchall()
     return a
 
+def getAllColumnNameDB(pluginName):
+    with PostgresConnectionContextManager() as db_cursor:
+        db_cursor.execute(
+            "SELECT row_to_json(t) FROM (SELECT name FROM column_attribute WHERE plugin_name=%s) as t",
+            (pluginName,))
+        a = db_cursor.fetchall()
+    return a
 
-def initColumnValueDB(pluginName, asset_original,columnName):
+def getColumnDB(pluginName, columnName):
+    with PostgresConnectionContextManager() as db_cursor:
+        db_cursor.execute(
+            "SELECT row_to_json(t) FROM (SELECT * FROM column_attribute WHERE plugin_name=%s AND name=%s) as t",
+            (pluginName, columnName,))
+        a = db_cursor.fetchone()
+    return a
+
+
+def initColumnValueDB(pluginName, asset_original, columnName):
     with PostgresConnectionContextManager() as db_cursor:
         # inject vul
         db_cursor.execute(
@@ -67,3 +83,38 @@ def initColumnValueDB(pluginName, asset_original,columnName):
              ))
         a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
     return a
+
+def initColumnValueDB_id(pluginName, id, columnName):
+    with PostgresConnectionContextManager() as db_cursor:
+        # inject vul
+        db_cursor.execute(
+            "SELECT " +
+            columnName +
+            " FROM " +
+            pluginName +
+            '_table' +
+            " WHERE id = %s",
+            (id,
+             ))
+        a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
+    return a
+
+
+def initColumnContainerDB(pluginName, asset_original, columnName):
+    with PostgresConnectionContextManager() as db_cursor:
+        # inject vul
+        db_cursor.execute(
+            "SELECT " +
+            columnName +
+            " FROM " +
+            pluginName +
+            '_table' +
+            " WHERE asset_original = %s",
+            (asset_original,
+             ))
+        a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
+    return a
+
+def is_basic_type(obj):
+    basic_types = [int, bool, float, str, list, dict, tuple]
+    return type(obj) in basic_types
