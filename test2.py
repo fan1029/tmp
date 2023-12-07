@@ -4,7 +4,7 @@ from utils.sqlHelper import PostgresConnectionContextManager
 
 if __name__ == '__main__':
     # importPlugins()
-    # a = Plugin_Goby(["10.1.72.121"], {})
+    # a = Plugin_Goby_old(["10.1.72.121"], {})
     # a.onLoad()
     # a.runAll()
     def getProjectUsedPlugins(project_id):

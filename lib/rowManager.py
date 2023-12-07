@@ -185,7 +185,7 @@ class RowManager():
 
 
 if __name__ == '__main__':
-    a = RowManager('Plugin_Goby', Asset('10.1.99.100', '10.1.99.100'))
+    a = RowManager('Plugin_Goby_old', Asset('10.1.99.100', '10.1.99.100'))
     a.getAllColumn()
     print(a.getColumn('vul'))
-    # a = RowManagerProxy('Plugin_Goby', 'www.baidu.com')
+    # a = RowManagerProxy('Plugin_Goby_old', 'www.baidu.com')

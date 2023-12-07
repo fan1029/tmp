@@ -1,10 +1,14 @@
+import copy
+
 from ..project import project_blue
 from dataclasses import dataclass,field
 from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
 from typing import List
+import traceback
 from lib.pluginManager import PluginManager
+from urllib.parse import urlparse
 
 
 @dataclass
@@ -79,6 +83,55 @@ class CreateProjectResponse():
     status: bool
     msg: str
     create_time: str
+    project_id:int
+
+
+
+def filter_url(url):
+    try:
+        if "://" not in url:
+            url = "http://" + url
+        result = urlparse(url)
+        hostname = result.hostname
+        if ":" in hostname:
+            hostname = hostname.split(":")[0]
+        return hostname
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+
+def filterAsset(assetList: List[str]):
+    '''
+    过滤资产，去除重复资产，将所有资产转为domain或ip
+    :param assetList:
+    :return:
+    '''
+    tmpList = []
+    for _ in assetList:
+        tmp = {"asset_name": '', "original_assets": [], "type": ''}
+        find = 0
+        filtered = filter_url(_)
+        for _2 in tmpList:
+            if filtered == _2["asset_name"]:
+                _2["original_assets"].append(_)
+                find = 1
+                break
+        if find == 0:
+            tmp["asset_name"] = filtered
+            tmp["original_assets"].append(_)
+            #判断filtered是ip还是domain
+            if filtered.replace('.','').isdigit():
+                tmp["type"] = 'ip'
+            else:
+                tmp["type"] = 'domain'
+            tmpList.append(copy.deepcopy(tmp))
+    return tmpList
+
+
+
+
 
 
 @project_blue.post('/createProject')
@@ -110,13 +163,17 @@ async def createProject(data: CreateProjectRequest):
             rows = cur.fetchone()
             tag_id = rows[0]
         #插入assets，其中tag_ids为数组
-        query = "INSERT INTO asset (project_id,asset_original,tag_ids) VALUES (%s,%s,%s)"
+        # query = "INSERT INTO asset (project_id,asset_name,tag_ids) VALUES (%s,%s,%s)"
+        filteredAssetList = filterAsset(data.assets)
+        query = "INSERT INTO asset (project_id,asset_name,tag_ids,original_assets,asset_type) VALUES (%s,%s,%s,%s,%s)"
         with PostgresConnectionContextManager() as cur:
-            for asset in data.assets:
-                cur.execute(query, (project_id, asset, [tag_id]))
-    except:
+            for _ in filteredAssetList:
+                cur.execute(query, (project_id, _['asset_name'], [tag_id], _['original_assets'], _['type']))
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
         return CreateProjectResponse(False,'创建失败,发生未知错误', str(datetime.datetime.now()))
-    return CreateProjectResponse(True,'创建成功', str(datetime.datetime.now()))
+    return CreateProjectResponse(True,'创建成功', str(datetime.datetime.now()),project_id)
 
 
 @dataclass

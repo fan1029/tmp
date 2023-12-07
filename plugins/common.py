@@ -144,8 +144,24 @@ def addAssetOriginalToTable(pluginName, asset_origianl):
             return True
 
 
-def submitRow():
-    pass
+
+def checkAndCreatePlutinTable(sql: str, pluginName: str):
+    '''
+    检测并创建插件表格
+    :param sql:
+    :param pluginName:
+    :return:
+    '''
+    with PostgresConnectionContextManager() as cur:
+        cur.execute("SELECT * FROM pg_tables WHERE tablename=%s", (pluginName + '_table',))
+        rows = cur.fetchone()
+        if rows:
+            return False
+        else:
+            cur.execute(sql)
+            return True
+
+
 
 
 if __name__ == '__main__':

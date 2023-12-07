@@ -42,7 +42,7 @@ class BaseElement(Base):
 class TagAttribute(Base):
     size: str = field(default=SIZE.SMALL.value)  # small default large
     theme: str = field(default=TAG_THEME.DEFAULT.value)  # dark light plain
-    round: bool = field(default=TAG_ROUND.DEFAULT.value)
+    round: bool = field(default=TAG_ROUND.TRUE.value)
 
 
 @dataclass

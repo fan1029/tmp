@@ -41,13 +41,13 @@ class Table(TableBase):
         return self.column
 
     def addRow(self, row: Row):
-        self.asset_original.append(row.asset_original)
+        self.asset_original.append(row.asset_name)
         self.row.append(row)
 
 
     def generateTable(self):
         returnDict = {"column": [_.to_dict() for _ in self.column],
-                      "asset_original": self.asset_original,
+                      "asset_name": self.asset_original,
                       "rows": [_.to_dict() for _ in self.row]}
         # returnDict = {"column": [_.to_dict() for _ in self.column],
         #               "asset_original": self.asset_original,

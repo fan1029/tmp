@@ -39,7 +39,7 @@ def submitOneRowDB(pluginName, asset_original, columnName, cellJson):
 def submitRowColorDB(asset_original, color):
     with PostgresConnectionContextManager() as db_cursor:
         db_cursor.execute(
-            "UPDATE asset SET row_color = %s WHERE asset_original = %s",
+            "UPDATE asset SET row_color = %s WHERE asset_name = %s",
             (color,
              asset_original))
 

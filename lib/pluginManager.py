@@ -2,10 +2,11 @@
 
 import os
 import pickle
+from utils.redis_manager import RedisMixin
 # from plugins.abstractPlugin import AbstractPlugin
 
 
-class PluginManager():
+class PluginManager(RedisMixin):
     __instance = None
     __pluginList = {}
 
@@ -43,16 +44,23 @@ class PluginManager():
 
         # 注册远程调用函数
         def wrapper(func):
-            def inner(obj):  # 序列化对象数据处理
-                if obj:
-                    obj = pickle.loads(bytes.fromhex(obj))
-                    obj.onRemoteNew()
-                return func(obj)
+            # def inner(obj):  # 序列化对象数据处理
+            #     if obj:
+            #         obj = pickle.loads(bytes.fromhex(obj))
+            #         obj.onRemoteNew()
+            #     return func(obj)
 
-            PluginManager.__pluginList[pluginName.lower()]['fun'] = inner
-            return inner
+            PluginManager.__pluginList[pluginName.lower()]['fun'] = func
+            return func
 
         return wrapper
+
+    # def resultHandler(self, pluginName: str, result: dict):
+    #     while True:
+    #         self.redis_db_service.rpop('plugin-result')
+    #     pass
+
+
 
     def getPluginNameList(self) -> list:
         '''

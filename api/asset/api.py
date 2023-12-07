@@ -42,15 +42,15 @@ class AddAssetResponse():
 async def addAsset(data: AddAssetRequest):
     #向asset中添加新的记录，遍历asset中的元素为original_name，插入时将tag_id插入到tag_ids字段中
     #先检测是否有同project_id下存在asset_origianl存在即向其tag_ids中添加tag_id
-    query = "SELECT * FROM asset WHERE project_id=%s AND asset_original=%s"
+    query = "SELECT * FROM asset WHERE project_id=%s AND asset_name=%s"
     with PostgresConnectionContextManager() as cur:
         for asset in data.asset:
             cur.execute(query, (data.project_id,asset))
             rows = cur.fetchone()
             if rows:
-                query = "UPDATE asset SET tag_ids = array_append(tag_ids,%s) WHERE project_id=%s AND asset_original=%s"
+                query = "UPDATE asset SET tag_ids = array_append(tag_ids,%s) WHERE project_id=%s AND asset_name=%s"
                 cur.execute(query, (data.tag_id,data.project_id,asset))
             else:
-                query = "INSERT INTO asset (project_id,asset_original,tag_ids) VALUES (%s,%s,%s)"
+                query = "INSERT INTO asset (project_id,asset_name,tag_ids) VALUES (%s,%s,%s)"
                 cur.execute(query, (data.project_id,asset,[data.tag_id]))
     return AddAssetResponse(True)

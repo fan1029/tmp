@@ -1,18 +1,32 @@
-from lib.pluginManager import PluginManager
-from plugins import importPlugins
+from urllib.parse import urlparse
 
-plugin_table = []
-importPlugins()
-pm = PluginManager()
-tableInfoList = pm.getPluginTableList()
-tableListUsed = {}
-print(tableInfoList)
-for _ in tableInfoList:
-    tmp = _.popitem()
-    tableListUsed[tmp[0]] = list(tmp[1].keys())
 
-# for _ in tableInfoList:
-#       item = _.popitem()
-#       plugin_table.append(item[0])
-#       tmp = item[1]
-#       tableListUsed.append({item[0]: list(tmp.keys())})
+
+def filter_url(url):
+    try:
+        if "://" not in url:
+            url = "http://" + url
+        result = urlparse(url)
+        hostname = result.hostname
+        if ":" in hostname:
+            hostname = hostname.split(":")[0]
+        return hostname
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+
+
+print(filter_url("http://www.baidu.com"))
+print(filter_url("https://www.baidu.com/"))
+print(filter_url("www.baidu.com"))
+print(filter_url("www.baidu.com:80"))
+print(filter_url("www.baidu.com:80/"))
+print(filter_url("www.baidu.com:80/123"))
+print(filter_url("www.baidu.com:80/123/"))
+print(filter_url("a.c.e.www.baidu.com:80/123/"))
+print(filter_url("http://1.2.3.4:8000/"))
+print(filter_url("http://3.3.4.5/"))
+print(filter_url("23.4.4.5"))
+print(filter_url("2.3.4.2:8081"))

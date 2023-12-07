@@ -9,6 +9,7 @@ import datetime
 from ..common import getProjectUsedPlugins, sqlInjectCheck
 from lib.table import Table
 from lib.row import Row
+from copy import deepcopy
 import json
 
 
@@ -83,17 +84,17 @@ async def createTag(data: CreateTagRequest):
         tag_id = rows[0]
         for asset in data.asset:
             # 判断asset存不存在表中
-            cur.execute("SELECT id FROM asset WHERE asset_original=%s AND project_id =%s", (asset, data.project_id))
+            cur.execute("SELECT id FROM asset WHERE asset_name=%s AND project_id =%s", (asset, data.project_id))
             rows = cur.fetchone()
             ##优化流程
             if rows:
                 # 如果存在asset则使用update更新表中的tag_ids
-                cur.execute("UPDATE asset SET tag_ids = tag_ids || %s WHERE asset_original = %s AND project_id=%s",
+                cur.execute("UPDATE asset SET tag_ids = tag_ids || %s WHERE asset_name = %s AND project_id=%s",
                             (tag_id, asset, data.project_id))
             else:
                 # 如果不存在asset则使用insert插入表中
                 cur.execute(
-                    "INSERT INTO asset (asset_original,project_id,tag_ids) VALUES (%s,%s,%s)",
+                    "INSERT INTO asset (asset_name,project_id,tag_ids) VALUES (%s,%s,%s)",
                     (asset, data.project_id, [tag_id]))
     return CreateTagResponse(True, '创建成功', data=data)
 
@@ -145,7 +146,7 @@ class getTagAssetListResponse():
 async def getTagAssetList(data: GetTagAssetListRequest):
     with PostgresConnectionContextManager() as cur:
         cur.execute(
-            "SELECT row_to_json(t) FROM (SELECT id,asset_original,plugin_using FROM asset WHERE project_id=%s AND tag_ids@>'{%s}') t; ",
+            "SELECT row_to_json(t) FROM (SELECT id,asset_name FROM asset WHERE project_id=%s AND tag_ids@>'{%s}') t; ",
             (data.project_id, data.tag_id)
         )
         rows = cur.fetchall()
@@ -213,13 +214,13 @@ class GetTagAssetDataRequest():
     current_table: List[str]
 
 
-
 @dataclass
 class GetTagAssetDataResponse():
     status: bool
     data: List[dict]
     msg: str
-    info:GetTagAssetDataRequest
+    info: dict
+
 
 @tag_blue.post('/getAssetData')
 @validate_request(GetTagAssetDataRequest)
@@ -228,13 +229,13 @@ async def getAssetData(data: GetTagAssetDataRequest):
     获取指定tag标签内的所有资产数据，支持翻页，size为每页的数量，page为页数,sort排序方式，asc为升序，desc为降序
     :return:
     '''
-    if data.tag_id==-1:
-        #根据tag_name获取tag_id
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
         with PostgresConnectionContextManager() as cur:
             cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
             rows = cur.fetchone()
             data.tag_id = rows[0]
-    a1=sqlInjectCheck(data.sortColumn)
+    a1 = sqlInjectCheck(data.sortColumn)
     a2 = sqlInjectCheck(data.sort)
     if not a1 or not a2:
         return GetTagAssetDataResponse(False, [], 'sql注入', data)
@@ -245,7 +246,7 @@ async def getAssetData(data: GetTagAssetDataRequest):
     tableListUsed = {}
     if not data.current_table:
         data.current_table = getProjectUsedPlugins(data.project_id)
-    current_table = [_+'_table' for _ in data.current_table]
+    current_table = [_ + '_table' for _ in data.current_table]
     for _ in tableInfoList:
         tmp = _.popitem()
         if tmp[0] in current_table:
@@ -291,17 +292,15 @@ async def getAssetData(data: GetTagAssetDataRequest):
         rows = cur.fetchall()
     # if rows:
     #     rows = rows[0]
-    resData=[]
+    resData = []
     for _ in rows:
-        _=_[0]
+        _ = _[0]
         tmp = {'asset_original': _['asset_original'], 'columnInfo': []}
-        for k,v in _.items():
-            if k !='asset_original':
+        for k, v in _.items():
+            if k != 'asset_original':
                 v['column_name'] = k
                 tmp['columnInfo'].append(v)
         resData.append(tmp)
-
-
 
     return GetTagAssetDataResponse(True, resData, 'ok', data)
 
@@ -313,28 +312,29 @@ async def getAssetData2(data: GetTagAssetDataRequest):
     获取指定tag标签内的所有资产数据，支持翻页，size为每页的数量，page为页数,sort排序方式，asc为升序，desc为降序
     :return:
     '''
-    if data.tag_id==-1:
-        #根据tag_name获取tag_id
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
         with PostgresConnectionContextManager() as cur:
             cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
             rows = cur.fetchone()
             data.tag_id = rows[0]
-    if data.tag_name =='':
+    if data.tag_name == '':
         with PostgresConnectionContextManager() as cur:
             cur.execute("SELECT tag_name FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
             rows = cur.fetchone()
             data.tag_name = rows[0]
-    a1=sqlInjectCheck(data.sortColumn)
+    a1 = sqlInjectCheck(data.sortColumn)
     a2 = sqlInjectCheck(data.sort)
     if not a1 or not a2:
         return GetTagAssetDataResponse(False, [], 'sql注入', data)
     from lib.pluginManager import PluginManager
     pm = PluginManager()
     if not data.current_table:
-        data.current_table = getProjectUsedPlugins(data.project_id)
+        # data.current_table = getProjectUsedPlugins(data.project_id)
+        data.current_table = ['plugin_goby']
     table = Table(data.current_table)
     query = f"""
-    SELECT asset_original,id FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_original {data.sort} LIMIT %s OFFSET %s 
+    SELECT asset_name,id,original_assets FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_name {data.sort} LIMIT %s OFFSET %s 
     """
     with PostgresConnectionContextManager() as cur:
         # 参数只包含数据值
@@ -342,13 +342,19 @@ async def getAssetData2(data: GetTagAssetDataRequest):
         cur.execute(query, params)
         rows = cur.fetchall()
     if rows:
-        print(rows)
+        # print(rows)
         for _ in rows:
-            row = Row(_[0],_[1], table.getColumnList())
+            row = Row(_[0], _[1], _[2], table.getColumnList())
             table.addRow(row)
     resData = table.generateTable()
+    query = "SELECT count(id) FROM asset WHERE project_id = %s AND %s = ANY(tag_ids)"
+    with PostgresConnectionContextManager() as cur:
+        # 参数只包含数据值
+        params = (data.project_id, data.tag_id)
+        cur.execute(query, params)
+        rows = cur.fetchone()
+        total = rows[0]
+    tmpdata = deepcopy(data.__dict__)
+    tmpdata['total'] = total
 
-
-    #
-
-    return GetTagAssetDataResponse(True, resData, 'ok', data)
+    return GetTagAssetDataResponse(True, resData, 'ok', tmpdata)
