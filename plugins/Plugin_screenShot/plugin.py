@@ -4,7 +4,7 @@ import multiprocessing
 
 
 class Plugin_screenShot(BasePlugin):
-    pluginName = 'basePlugin'
+    pluginName = 'screenshot'
     tableName = pluginName + '_table'
     author = 'maple'
     version = '1.0'

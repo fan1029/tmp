@@ -1,9 +1,9 @@
-from lib.common import getAllColumnDB, getAllColumnNameDB, initColumnValueDB, initColumnValueDB_id
+from core.common import getAllColumnDB, getAllColumnNameDB, initColumnValueDB, initColumnValueDB_id
 from type.myTypes import Asset
-from lib.column import Column
+from core.column import Column
 from typing import Union, List
-from lib.cellContainer import Container
-from lib.tableBase import TableBase
+from core.cellContainer import Container
+from core.tableBase import TableBase
 from copy import deepcopy
 
 

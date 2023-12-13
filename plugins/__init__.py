@@ -1,7 +1,7 @@
 import importlib
 import os
 import inspect
-from lib.pluginManager import PluginManager
+from core.pluginManager import PluginManager
 import nb_log
 
 

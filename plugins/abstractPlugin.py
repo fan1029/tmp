@@ -3,11 +3,11 @@ import time
 from typing import List, Union
 import pickle
 import nb_log
-from lib.pluginManager import PluginManager
+from core.pluginManager import PluginManager
 from utils.store import Store
 from utils.utils import md5Encode
 from type.myTypes import Asset
-from lib.notify import Notify
+from core.notify import Notify
 from funboost import boost, BrokerEnum
 from plugins.common import pluginLock, pluginUnlock, pushUndoQueue, removeUndoQueue, checkAllFinished, getComputerName, \
     registerAsset, addAssetOriginalToTable
@@ -34,11 +34,11 @@ class AbstractPlugin():
         self.runMode = 'run'
         self.notify = Notify(self.pluginName, self.config.get('projectId'))  # 初始化通知类
         for _ in assets:
-            self.assets.append(Asset(assetOriginal=_, assetFiltered=self.filter(_)))  # 将资产过滤后添加到assets中
+            self.assets.append(Asset(asset_name=_, assetFiltered=self.filter(_)))  # 将资产过滤后添加到assets中
             nb_log.info(self.assets)
         for _ in self.assets:
             registerAsset(self.pluginName, _)  # 注册资产过滤前后映射关系
-            self.init_plugin_table(_.assetOriginal)  # 添加资产到插件表格中。
+            self.init_plugin_table(_.asset_name)  # 添加资产到插件表格中。
 
         self.__setConfig(settings)
         self.computerName = getComputerName()  # 获取主机名
@@ -249,7 +249,7 @@ class AbstractPlugin():
             pluginUnlock(asset, self.pluginName)
             removeUndoQueue(self.pluginName, asset)
             self.__checkAllFinished()
-            self.notify.error('资产执行失败\n+' + asset.assetOriginal + '\n' + error)
+            self.notify.error('资产执行失败\n+' + asset.asset_name + '\n' + error)
             return False
 
 

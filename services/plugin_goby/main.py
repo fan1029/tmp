@@ -1,10 +1,10 @@
-from services.goby.lifeCycleFuntion_manager import LifeCycle
-from services.goby.plugin_service import PlguinService
+from services.plugin_goby.lifeCycleFuntion_manager import LifeCycle
+from services.plugin_goby.plugin_service import PlguinService
 from multiprocessing import Process
-from services.goby.gobyTypes import ScanModel, AssetSearchModel, GobyAsset, Options, OptionsAssetSearch, \
+from services.plugin_goby.gobyTypes import ScanModel, AssetSearchModel, GobyAsset, Options, OptionsAssetSearch, \
     Vulnerability, PluginInfo
-from services.goby.common import runScan, checkProgress, assetSearch, dataStore
-from lib.rowManager import RowManagerProxy
+from services.plugin_goby.common import runScan, checkProgress, assetSearch, dataStore
+from core.rowManager import RowManagerProxy
 from type.elements import Tag, Text, Popover, Action, TagAttribute, TextAttribute
 from type.enums import SIZE, TAG_THEME, TAG_ROUND, TEXT_TYPE, TEXT_TAG
 import nb_log
@@ -47,17 +47,17 @@ def initGobyService():
 
 
 @LifeCycle.toolRunning
-def gobyScan(msgId: str, msg: dict):
-    urls = msg.get('url')
-    if type(urls) == str:
-        urls = json.loads(urls)
+def gobyScan(msgId: str,targets:list,config:dict):
+    urls = targets
+    # if type(urls) == str:
+    #     urls = json.loads(urls)
     host = GobyFreeProcessQueue.get()
     nb_log.debug('gobyScan: 获取使用进程API' + host)
     scanModel = ScanModel(
         taskName='dataCenter' + str(random.randint(1, 999999)),
         asset=GobyAsset(
             ips=list(set([_ for _ in urls])),
-            ports='21,22,80,U:137,443,445,3000-9000'),
+            ports=config.get('ports')),
         vulnerability=Vulnerability(),
         options=Options(rate=1000),
     )

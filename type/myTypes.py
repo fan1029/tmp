@@ -1,15 +1,17 @@
 from dataclasses import dataclass, field,asdict,is_dataclass
 from typing import  Union
 from enum import Enum
-from lib.cellContainer import Container
+from core.cellContainer import Container
 
 
 @dataclass
 class Asset:
-    assetOriginal: str
+    asset_name: str
+    asset_type: str
     assetFiltered: str
-    ip: Union[str, None] = field(default=None)
-    port: Union[str, None] = field(default=None)
+    original_assets:list
+    rowColor: str = 'DEFAULT'
+    label: str = ''
 
     def toDict(self):
         return asdict(self)

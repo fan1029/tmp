@@ -1,7 +1,8 @@
 from utils.redis_manager import RedisMixin
 from nb_log import LoggerMixin
 import json
-from typing import Union
+from core.asset import Asset
+from typing import List, Union
 import time
 import uuid
 
@@ -48,28 +49,47 @@ class Service(RedisMixin, LoggerMixin):
         else:
             return False
 
-    def addTask(self, url: Union[str, list]):
-        urls = []
-        if type(url) == list:
-            urls = url
+
+    @staticmethod
+    def getTaskCount(serviceName):
+        '''
+        获取任务队列中的任务数量
+        :param serviceName:
+        :return:
+        '''
+        return RedisMixin().redis_db_service.xlen(serviceName + '-task')
+
+    @staticmethod
+    def getTasks(serviceName):
+        '''
+        获取任务队列中的任务
+        :param serviceName:
+        :return:
+        '''
+        return RedisMixin().redis_db_service.xrange(serviceName + '-task')
+
+
+    def addTask(self, asset: Union[dict, List[dict]], config=None):
+        if config is None:
+            config = {}
+        AssetsList = []
+        if isinstance(asset, list):
+            AssetsList = asset
         else:
-            urls.append(url)
-        msgId = self.redis_db_service.xadd(self.taskQueueName, {"url": json.dumps(urls), "publishTime": str(int(time.time()))})
+            AssetsList.append(asset)
+        msgId = self.redis_db_service.xadd(self.taskQueueName,{"targets": json.dumps(AssetsList), "publishTime": str(int(time.time())),"config":json.dumps(config)})
         return msgId
 
-
-    def delTask(self,msgId):
+    def delTask(self, msgId):
         '''
         加上检测是否被拿去消费了
         :param msgId:
         :return:
         '''
-        #检测stream任务是否被取走，没有被取走则删除
-        self.redis_db_service.xdel(self.taskQueueName,msgId)
+        # 检测stream任务是否被取走，没有被取走则删除
+        self.redis_db_service.xdel(self.taskQueueName, msgId)
 
-
-
-    def setMaxThread(self,serviceName,threadNum:int):
+    def setMaxThread(self, serviceName, threadNum: int):
         '''
         设置最大线程
         :param threadNum:
@@ -81,12 +101,11 @@ class Service(RedisMixin, LoggerMixin):
         return True
 
 
-
-
 class ServiceMixIn():
 
-    def getService(self,pluginName):
+    def getService(self, pluginName):
         return Service(pluginName)
+
 
 if __name__ == '__main__':
     a = RedisMixin().redis_db_service.hkeys('plugin-center')

@@ -1,11 +1,11 @@
-from lib.common import submitOneRowDB, submitRowColorDB, getAllColumnDB, initColumnValueDB
+from core.common import submitOneRowDB, submitRowColorDB, getAllColumnDB, initColumnValueDB
 from type.myTypes import Asset, Column
 from utils.sqlHelper import PostgresConnectionContextManager
 from typing import List, Union
 from type.elements import BaseElement
 from plugins.common import getAssetOriginal
 from type.enums import COLOR
-from lib.cellContainer import TextContainer, TagContainer, ImageContainer
+from core.cellContainer import TextContainer, TagContainer, ImageContainer
 
 
 class RowManagerProxy():
@@ -112,7 +112,7 @@ class RowManager():
 
     def initColumnValue(self, column: Column):
             #从pluginName_table表中获取对应的cell对象
-            a = initColumnValueDB(self.pluginName, self.asset.assetOriginal,column.name)   #查插件表中对应列的数据
+            a = initColumnValueDB(self.pluginName, self.asset.asset_name, column.name)   #查插件表中对应列的数据
             if a is None:
                 # raise Exception('数据库中没有对应的记录')
                 cellClass = globals()[column.type + 'Container']
@@ -166,12 +166,12 @@ class RowManager():
                     break
 
     def submitRowColor(self):
-        asset_original = self.asset.assetOriginal
+        asset_original = self.asset.asset_name
         color = self.color.name
         submitRowColorDB(asset_original, color)
     def submitOneRow(self, column: Column):
         cellJson = column.container.toJson()
-        submitOneRowDB(self.pluginName, self.asset.assetOriginal, column.name, cellJson)
+        submitOneRowDB(self.pluginName, self.asset.asset_name, column.name, cellJson)
         self.submitRowColor()
 
     def submitRow(self, columnName: str = ''):

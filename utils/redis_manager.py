@@ -40,7 +40,7 @@ class RedisManager(object):
 class AioRedisManager(object):
     _redis_db__conn_map = {}
 
-    def __init__(self, host='127.0.0.1', port=6379, db=0, username='', password=''):
+    def __init__(self, host='127.0.0.1', port=6379, db=4, username='', password=''):
         self._key = (host, port, db, username, password,)
         if self._key not in self.__class__._redis_db__conn_map:
             self.__class__._redis_db__conn_map[self._key] = AioRedis(host=host, port=port, db=db, username=username,

@@ -1,4 +1,4 @@
-from lib.common import is_basic_type
+from core.common import is_basic_type
 
 
 class TableBase:

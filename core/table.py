@@ -1,8 +1,8 @@
-from lib.common import getAllColumnNameDB
-from lib.column import Column
-from lib.row import Row
+from core.common import getAllColumnNameDB
+from core.column import Column
+from core.row import Row
 from typing import List, Union
-from lib.tableBase import TableBase
+from core.tableBase import TableBase
 
 class Table(TableBase):
 

@@ -1,5 +1,5 @@
 # 插件管理器，负责插件加载,重启,卸载,更新等
-
+import json
 import os
 import pickle
 from utils.redis_manager import RedisMixin
@@ -18,6 +18,14 @@ class PluginManager(RedisMixin):
     def __init__(self):
         pass
 
+
+
+    @staticmethod
+    def regInRedis(cls):
+        info = {'pluginName': cls.pluginName, 'author': cls.author, 'version': cls.version, 'description': cls.description,'tableName':cls.tableName,'columnDict':cls.columnDict,'runMode':cls.runMode}
+        RedisMixin().redis_db_service.hset('plugin', cls.pluginName,json.dumps(info))
+
+
     @staticmethod
     def pluginClassRegister(pluginName: str):
         '''
@@ -30,6 +38,7 @@ class PluginManager(RedisMixin):
         def wrapper(cls):
             PluginManager.__pluginList[pluginName.lower()] = {
                 "class": cls, "fun": None, "obj": []}
+            PluginManager.regInRedis(cls)
             return cls
 
         return wrapper

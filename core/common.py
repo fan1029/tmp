@@ -2,6 +2,7 @@
 from utils.sqlHelper import PostgresConnectionContextManager
 
 
+
 def submitOneRowDB(pluginName, asset_original, columnName, cellJson):
     with PostgresConnectionContextManager() as db_cursor:
         # 检查存不存在对应的行，有则更新，没有则添加
@@ -118,3 +119,6 @@ def initColumnContainerDB(pluginName, asset_original, columnName):
 def is_basic_type(obj):
     basic_types = [int, bool, float, str, list, dict, tuple]
     return type(obj) in basic_types
+
+def idToAsset(id:int):
+    pass

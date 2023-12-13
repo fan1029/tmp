@@ -3,6 +3,7 @@ from utils.store import Store
 from utils.utils import md5Encode
 from type.myTypes import Asset
 from utils.sqlHelper import PostgresConnectionContextManager
+from utils.redis_manager import RedisMixin
 import json
 import socket
 
@@ -87,7 +88,7 @@ def registerAsset(pluginName, asset: Asset) -> bool:
             "SELECT asset_filtered FROM asset_map WHERE asset_filtered=%s AND plugin_name=%s AND %s=ANY(asset_original)",
             (asset.assetFiltered,
              pluginName,
-             asset.assetOriginal))
+             asset.asset_name))
         rows = cur.fetchone()
         if rows:
             # 重复资产，不录入
@@ -101,7 +102,7 @@ def registerAsset(pluginName, asset: Asset) -> bool:
         if rows:
             cur.execute(
                 "UPDATE asset_map SET asset_original=array_append(asset_original,%s) WHERE asset_filtered=%s AND plugin_name=%s",
-                (asset.assetOriginal,
+                (asset.asset_name,
                  asset.assetFiltered,
                  pluginName))
         else:
@@ -109,8 +110,8 @@ def registerAsset(pluginName, asset: Asset) -> bool:
                 "INSERT INTO asset_map (asset_filtered,asset_original,plugin_name) VALUES (%s,%s,%s)",
                 (asset.assetFiltered,
                  [
-                     asset.assetOriginal],
-                    pluginName))
+                     asset.asset_name],
+                 pluginName))
     # 查询一次该条记录，用hash表记录asset_original和asset_filtered的对应关系存入redis
     with PostgresConnectionContextManager() as cur:
         cur.execute(
@@ -119,6 +120,10 @@ def registerAsset(pluginName, asset: Asset) -> bool:
              asset.assetFiltered))
         rows = cur.fetchone()
         store.hset('asset_map' + pluginName, rows[0], json.dumps(rows[1]))
+
+
+def registerAssetNew(target: str, assetId: Union[int, str]) -> None:
+    RedisMixin().redis_db_service.hset('asset_target_Map', target, assetId)
 
 
 def addAssetOriginalToTable(pluginName, asset_origianl):
@@ -144,7 +149,6 @@ def addAssetOriginalToTable(pluginName, asset_origianl):
             return True
 
 
-
 def checkAndCreatePlutinTable(sql: str, pluginName: str):
     '''
     检测并创建插件表格
@@ -162,8 +166,6 @@ def checkAndCreatePlutinTable(sql: str, pluginName: str):
             return True
 
 
-
-
 if __name__ == '__main__':
     registerAsset(
         'test',
@@ -171,7 +173,6 @@ if __name__ == '__main__':
             'http://www.bai12312311du.c1om',
             'www.baidu.com'))
     print(getAssetOriginal('test', 'www.baidu.com'))
-
 
 # def registerFreeTimeQueue(pluginName, host, computerName):
 #     '''

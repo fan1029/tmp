@@ -2,8 +2,8 @@ import time
 import typing
 import abc
 from utils.redis_manager import RedisMixin
-from services.goby.flexibleThreadPool import FlexibleThreadPool
-from services.goby.lifeCycleFuntion_manager import LifeCycle
+from services.plugin_goby.flexibleThreadPool import FlexibleThreadPool
+from services.plugin_goby.lifeCycleFuntion_manager import LifeCycle
 import threading
 import socket
 import nb_log
@@ -21,8 +21,8 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
         self.plugin_name = pluginConfig.get('pluginName')
         self.redis_result_queue_Name = 'plugin-result'
         self.taskMqName = self.plugin_name.lower() + '-task'
-        self.consumer_identification = self.plugin_name.lower() + socket.gethostname() + '-consumer'
-        self.consume_info_key = self.plugin_name.lower() + '-'+socket.gethostname() + '-info'
+        self.consumer_identification = self.plugin_name.lower() + '-' + socket.gethostname() + '-consumer'
+        self.consume_info_key = self.plugin_name.lower() + '-' + socket.gethostname() + '-info'
         self.maxThread = pluginConfig.get('maxThread')
         self.stopFlag = False  # 暂停标志
         self.threadPool = None
@@ -106,8 +106,9 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
             if newInfo != oldInfo:
                 self.handleNewInfo(newInfo)
 
-    def _submit_task(self, msg_id, msg):
-        self.threadPool.submit(self.getFun('toolRunning'), msg_id, msg)
+    def _submit_task(self, msg_id: str, msg: dict):
+        # msgDict = json.loads(msg)
+        self.threadPool.submit(self.getFun('toolRunning'), msg_id, msg.get('targets'), msg.get('config'))
         self.updateInfo()
 
     def listenMessageQueue(self):
@@ -150,17 +151,15 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
         :return:
         '''
         self.redis_db_frame.xack(self.taskMqName, self.plugin_name, msgId)
-        self.redis_db_frame.xdel(self.taskMqName,msgId)
-
+        self.redis_db_frame.xdel(self.taskMqName, msgId)
 
     def setResult(self, url, res):
-        resStruct = {"pluginName":self.plugin_name,"url": url, "data": res}
+        resStruct = {"pluginName": self.plugin_name, "url": url, "data": res}
         print(resStruct)
         RedisMixin().redis_db_frame.lpush(self.redis_result_queue_Name, json.dumps(resStruct))
 
     def regPluginCenter(self):
         self.redis_db_service.hset(self.pluginCenterName, self.consume_info_key, json.dumps(self.info))
-
 
     def runService(self):
         self.setInfo(status="opening")

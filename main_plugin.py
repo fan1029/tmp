@@ -1,6 +1,6 @@
 from plugins import importPlugins
 from utils.redis_manager import RedisMixin
-from lib.pluginManager import PluginManager
+from core.pluginManager import PluginManager
 from plugins.BasePlugin import BasePlugin
 import json
 
@@ -15,4 +15,4 @@ if __name__ == '__main__':
             for _ in ResultList:
                 _ = json.loads(_)
                 pluginObj: BasePlugin = pluginManager.getPlugin(_.get('pluginName'))
-                pluginObj.onResult(_.get('url'), _)
+                pluginObj.onBeforeResult(_.get('url'), _)

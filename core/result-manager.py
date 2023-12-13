@@ -1,5 +1,5 @@
 from utils.redis_manager import RedisMixin
-from lib.pluginManager import PluginManager
+from core.pluginManager import PluginManager
 
 
 class ResultManager(RedisMixin):

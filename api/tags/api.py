@@ -7,8 +7,8 @@ from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
 import datetime
 from ..common import getProjectUsedPlugins, sqlInjectCheck
-from lib.table import Table
-from lib.row import Row
+from core.table import Table
+from core.row import Row
 from copy import deepcopy
 import json
 
@@ -240,7 +240,7 @@ async def getAssetData(data: GetTagAssetDataRequest):
     if not a1 or not a2:
         return GetTagAssetDataResponse(False, [], 'sql注入', data)
     plugin_table = []
-    from lib.pluginManager import PluginManager
+    from core.pluginManager import PluginManager
     pm = PluginManager()
     tableInfoList = pm.getPluginTableList()
     tableListUsed = {}
@@ -327,7 +327,7 @@ async def getAssetData2(data: GetTagAssetDataRequest):
     a2 = sqlInjectCheck(data.sort)
     if not a1 or not a2:
         return GetTagAssetDataResponse(False, [], 'sql注入', data)
-    from lib.pluginManager import PluginManager
+    from core.pluginManager import PluginManager
     pm = PluginManager()
     if not data.current_table:
         # data.current_table = getProjectUsedPlugins(data.project_id)

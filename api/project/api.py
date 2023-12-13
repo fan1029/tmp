@@ -7,7 +7,7 @@ from quart_schema import validate_request, validate_response
 import datetime
 from typing import List
 import traceback
-from lib.pluginManager import PluginManager
+from core.pluginManager import PluginManager
 from urllib.parse import urlparse
 
 

@@ -1,9 +1,9 @@
 # This file contains the Column class, which is used to store information about a column in a table.
 from typing import Union
-from lib.cellContainer import Container
-from lib.common import getAllColumnDB, getColumnDB
-from lib.cellContainer import TagContainer, TextContainer, ImageContainer, TableContainer
-from lib.tableBase import TableBase
+from core.cellContainer import Container
+from core.common import getAllColumnDB, getColumnDB
+from core.cellContainer import TagContainer, TextContainer, ImageContainer, TableContainer
+from core.tableBase import TableBase
 from copy import deepcopy
 
 
