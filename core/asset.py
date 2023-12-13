@@ -4,6 +4,7 @@ from type.elements import BaseElement
 from type.myTypes import Column
 from core.common import initColumnValueDB, submitOneRowDB, getAllColumnDB
 from typing import List, Union
+from core.cellContainer import TextContainer, TagContainer, ImageContainer
 from functools import lru_cache
 import json
 
@@ -211,9 +212,9 @@ class Asset(RedisMixin):
         :param columnName:
         :return:
         '''
-        for k, v in self.allPluginInfo:
+        for k, v in self.allPluginInfo.items():
             columnDict = v['columnDict']
-            if columnName in columnDict.values():
+            if columnName in columnDict.keys():
                 return k
 
     def setCell(self, cloName, cell: Union[BaseElement, List[BaseElement]]):

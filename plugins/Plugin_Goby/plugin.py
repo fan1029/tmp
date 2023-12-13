@@ -47,12 +47,6 @@ class Plugin_Goby(BasePlugin):
     def onResult(cls, asset: Asset, result: dict):
         _ = result.get('data')
         nb_log.info(_)
-        if _['hostnames'][0] != "":
-            assetFiltered = _['hostnames'][0]
-        else:
-            assetFiltered = _['ip']
-        rowManager = RowManagerProxy(cls.pluginName, assetFiltered)  # 构造表格数据
-        #####处理数据########
         # tag
         tagsDict = _['tags']
         if tagsDict is not None:

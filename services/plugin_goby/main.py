@@ -57,9 +57,9 @@ def gobyScan(msgId: str,targets:list,config:dict):
         taskName='dataCenter' + str(random.randint(1, 999999)),
         asset=GobyAsset(
             ips=list(set([_ for _ in urls])),
-            ports=config.get('ports')),
-        vulnerability=Vulnerability(),
-        options=Options(rate=1000),
+            ports=config.get('portTypeConent')),
+        vulnerability=Vulnerability(type=config.get('vulScanType')),
+        options=Options(rate=config.get('scanRate')),
     )
     res, msg = runScan(host, scanModel)
     if res:

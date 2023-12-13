@@ -49,4 +49,4 @@ if __name__ == '__main__':
     from plugins import importPlugins
 
     importPlugins()
-    app.run(port=5000,debug=True)
+    app.run(port=5000)

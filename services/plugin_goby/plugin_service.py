@@ -108,7 +108,7 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
 
     def _submit_task(self, msg_id: str, msg: dict):
         # msgDict = json.loads(msg)
-        self.threadPool.submit(self.getFun('toolRunning'), msg_id, msg.get('targets'), msg.get('config'))
+        self.threadPool.submit(self.getFun('toolRunning'), msg_id, json.loads(msg.get('targets')), json.loads(msg.get('config')))
         self.updateInfo()
 
     def listenMessageQueue(self):

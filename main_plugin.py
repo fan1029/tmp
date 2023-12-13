@@ -15,4 +15,4 @@ if __name__ == '__main__':
             for _ in ResultList:
                 _ = json.loads(_)
                 pluginObj: BasePlugin = pluginManager.getPlugin(_.get('pluginName'))
-                pluginObj.onBeforeResult(_.get('url'), _)
+                pluginObj().onBeforeResult(_.get('url'), _)
