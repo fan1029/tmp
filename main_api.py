@@ -24,19 +24,19 @@ async def handle_options():
 
 
 
-@app.websocket('/ws')
+@app.websocket('/notify')
 async def ws():
     '''
     webscoket实时通知，获取redis队列中的消息。减少轮询造成的压力
     :return:
     '''
-    await websocket.send('hello')
+    await websocket.send(json.dumps({"msg": "通知服务连接成功"}))
     while True:
         msg = await redis.blpop('notify', 30)
         if msg:
             await websocket.send(msg[1])
         else:
-            await websocket.send('heartbeat')
+            await websocket.send(json.dumps({"msg": "连接成功"}))
 
 
 

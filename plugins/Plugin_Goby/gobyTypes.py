@@ -34,7 +34,7 @@ class Vulnerability(Base):
 
 @dataclass
 class Options(Base):
-    jumpCDN: bool = field(default=True)
+    jumpCDN: bool = field(default=False)
     jumpWAF: bool = field(default=False)
     queue: int = field(default=0)
     random: bool = field(default=False)

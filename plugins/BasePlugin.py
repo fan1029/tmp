@@ -124,7 +124,7 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         tmp3 = []
         for _ in tmp2:
             tmp3.append(_['target'])
-        self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh)
+        self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh,displayType='ElNotification')
         return tmp3
 
     def run(self, ids: list, config: dict):
@@ -148,10 +148,12 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
 
         tmp = self.getAssetIdByTarget(target)
         if tmp:
-            self.delAssetIdByTarget(target)
+
             asset = Asset().initAsset(id=tmp)
             self.onResult(asset, data)
-            self.notifier.info(f'任务完成,target:{target}', title=self.pluginNameZh)
+            if data.get('finish'):
+                self.delAssetIdByTarget(target)
+                self.notifier.info(f'任务完成,target:{target}', title=self.pluginNameZh,displayType="ElNotification")
         else:
             self.notifier.error(f'结果回调时未找到资产的原始映射资产,target:{target}。结果丢弃', title=self.pluginNameZh)
 

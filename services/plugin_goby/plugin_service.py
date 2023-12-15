@@ -108,7 +108,8 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
 
     def _submit_task(self, msg_id: str, msg: dict):
         # msgDict = json.loads(msg)
-        self.threadPool.submit(self.getFun('toolRunning'), msg_id, json.loads(msg.get('targets')), json.loads(msg.get('config')))
+        self.threadPool.submit(self.getFun('toolRunning'), msg_id, json.loads(msg.get('targets')),
+                               json.loads(msg.get('config')))
         self.updateInfo()
 
     def listenMessageQueue(self):
@@ -153,8 +154,8 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
         self.redis_db_frame.xack(self.taskMqName, self.plugin_name, msgId)
         self.redis_db_frame.xdel(self.taskMqName, msgId)
 
-    def setResult(self, url, res):
-        resStruct = {"pluginName": self.plugin_name, "url": url, "data": res}
+    def setResult(self, url, res, finish=True):
+        resStruct = {"pluginName": self.plugin_name, "url": url, "data": res, "finish": finish}
         print(resStruct)
         RedisMixin().redis_db_frame.lpush(self.redis_result_queue_Name, json.dumps(resStruct))
 

@@ -24,42 +24,42 @@ class Notify(RedisMixin):
             cur.execute('INSERT INTO notify (notifier, type, message) VALUES (%s,%s,%s)',
                         (self.notifier, msgType, json.dumps(message)))
 
-    def info(self, info, msgType="tmp", title='', displayType="ToolTip"):
+    def info(self, info, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": info, "type": "info", "displayType": displayType,
                    "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)
         self.setToDB(msgType, message)
 
-    def waring(self, waring, msgType="tmp", title='', displayType="ToolTip"):
+    def waring(self, waring, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": waring, "type": "waring", "displayType": displayType,
                    "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)
         self.setToDB(msgType, message)
 
-    def error(self, error, msgType="tmp", title='', displayType="ToolTip"):
+    def error(self, error, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": error, "type": "error", "displayType": displayType,
                    "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)
         self.setToDB(msgType, message)
 
-    def high(self, high, msgType="tmp", title='', displayType="ToolTip"):
+    def high(self, high, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": high, "type": "high", "displayType": displayType,
                    "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)
         self.setToDB(msgType, message)
 
-    def medium(self, medium, msgType="tmp", title='', displayType="ToolTip"):
+    def medium(self, medium, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": medium, "type": "medium", "displayType": displayType,
                    "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)
         self.setToDB(msgType, message)
 
-    def low(self, low, msgType="tmp", title='', displayType="ToolTip"):
+    def low(self, low, msgType="tmp", title='', displayType="ElMessage"):
         message = {"title": title, "content": low, "type": "low", "displayType": displayType, "notifier": self.notifier,
                    "time": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.addToMsgQueue(message)

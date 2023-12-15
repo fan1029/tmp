@@ -1,3 +1,5 @@
+import time
+
 import nb_log
 
 from ..tags import tag_blue
@@ -10,6 +12,7 @@ from ..common import getProjectUsedPlugins, sqlInjectCheck
 from core.table import Table
 from core.row import Row
 from copy import deepcopy
+from quart import websocket
 import json
 
 
@@ -358,3 +361,73 @@ async def getAssetData2(data: GetTagAssetDataRequest):
     tmpdata['total'] = total
 
     return GetTagAssetDataResponse(True, resData, 'ok', tmpdata)
+
+
+async def getAssetDataFunc(data: GetTagAssetDataRequest):
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
+    if data.tag_name == '':
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT tag_name FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
+            rows = cur.fetchone()
+            data.tag_name = rows[0]
+    a1 = sqlInjectCheck(data.sortColumn)
+    a2 = sqlInjectCheck(data.sort)
+    if not a1 or not a2:
+        return GetTagAssetDataResponse(False, [], 'sql注入', data)
+    from core.pluginManager import PluginManager
+    pm = PluginManager()
+    if not data.current_table:
+        # data.current_table = getProjectUsedPlugins(data.project_id)
+        data.current_table = ['plugin_goby']
+    table = Table(data.current_table)
+    query = f"""
+    SELECT asset_name,id,original_assets FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_name {data.sort} LIMIT %s OFFSET %s 
+    """
+    with PostgresConnectionContextManager() as cur:
+        # 参数只包含数据值
+        params = (data.project_id, data.tag_id, data.size, (data.page - 1) * data.size)
+        cur.execute(query, params)
+        rows = cur.fetchall()
+    if rows:
+        # print(rows)
+        for _ in rows:
+            row = Row(_[0], _[1], _[2], table.getColumnList())
+            table.addRow(row)
+    resData = table.generateTable()
+    query = "SELECT count(id) FROM asset WHERE project_id = %s AND %s = ANY(tag_ids)"
+    with PostgresConnectionContextManager() as cur:
+        # 参数只包含数据值
+        params = (data.project_id, data.tag_id)
+        cur.execute(query, params)
+        rows = cur.fetchone()
+        total = rows[0]
+    tmpdata = deepcopy(data.__dict__)
+    tmpdata['total'] = total
+
+
+    return (True, resData, 'ok', tmpdata)
+
+
+@tag_blue.websocket('/syncTable')
+async def syncTable():
+    await websocket.send(json.dumps({"msg":"hello"}))
+    while True:
+        try:
+            dataJson = await websocket.receive_json()
+        except:
+            await websocket.send('error')
+            continue
+        data = GetTagAssetDataRequest(project_id=dataJson['project_id'], tag_name=dataJson['tag_name'],
+                                      tag_id=dataJson['tag_id'],
+                                      size=dataJson['size'], page=dataJson['page'], sortColumn=dataJson['sortColumn'],
+                                      sort=dataJson['sort'],
+                                      current_table=dataJson['current_table'])
+        tableData = await getAssetDataFunc(data)
+        result =  {"status":tableData[0],"data":tableData[1],"msg":tableData[2],"info":tableData[3]}
+        await websocket.send(json.dumps(result))
+

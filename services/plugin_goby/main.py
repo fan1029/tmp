@@ -81,8 +81,11 @@ def gobyScan(msgId: str,targets:list,config:dict):
                     assetFiltered = _['hostnames'][0]
                 else:
                     assetFiltered = _['ip']
-                service.setResult(assetFiltered, _)  # 存储扫描数据
-
+                if res:
+                    if int(msg) == 100:
+                        service.setResult(assetFiltered, _,finish=True)  # 存储扫描数据
+                    else:
+                        service.setResult(assetFiltered, _,finish=False)
         if res:
             if int(msg) == 100:
                 service.ackMsg(msgId)
