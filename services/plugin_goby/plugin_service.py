@@ -3,6 +3,7 @@ import typing
 import abc
 from utils.redis_manager import RedisMixin
 from services.plugin_goby.flexibleThreadPool import FlexibleThreadPool
+import threading
 from services.plugin_goby.lifeCycleFuntion_manager import LifeCycle
 import threading
 import socket
@@ -96,12 +97,19 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
             self.stopService()
         if self.maxThread != Info.get('maxThread'):
             self.maxThread = int(Info.get('maxThread'))
+            self.threadPool.set_max_workers(self.maxThread)
         pass
+
+    def setAssetRunningStatus(self, msgId):
+        self.redis_db_frame.lpush('assetRunning', msgId)  # 设置状态正在运行
+
+    def delAssetRunningStatus(self, msgId):
+        self.redis_db_frame.lrem('assetRunning', 0, msgId)
 
     def listenBroadCastMessageQueue(self):
         oldInfo = ''
         while True:
-            time.sleep(10)
+            time.sleep(5)
             newInfo = self.getInfo()
             if newInfo != oldInfo:
                 self.handleNewInfo(newInfo)
@@ -122,11 +130,15 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
             print('开始监听中')
             stopFlag = self.getInfo().get("stopFlag")
             if not stopFlag:
+                # if self.threadPool.threads_free_count > 0:
                 results = self.redis_db_frame.xreadgroup(self.plugin_name, self.consumer_identification,
-                                                         {self.taskMqName: ">"}, count=self.maxThread, block=60 * 1000)
+                                                         {self.taskMqName: ">"}, count=self.maxThread,
+                                                         block=60 * 1000)
                 if results:
                     for msg_id, msg in results[0][1]:
-                        self._submit_task(msg_id, msg)
+                        self.setAssetRunningStatus(msg_id)  # 设置运行中
+                        self._submit_task(msg_id, msg)  # 提交运行
+                        time.sleep(1)
 
     def initService(self):
         self.getFun('toolInit')()
@@ -153,9 +165,13 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
         '''
         self.redis_db_frame.xack(self.taskMqName, self.plugin_name, msgId)
         self.redis_db_frame.xdel(self.taskMqName, msgId)
+        self.delAssetRunningStatus(msgId)  # 删除运行中
 
-    def setResult(self, url, res, finish=True):
-        resStruct = {"pluginName": self.plugin_name, "url": url, "data": res, "finish": finish}
+    def reportError(self, msgId, msg):
+        self.redis_db_frame.lpush(self.redis_result_queue_Name, json.dumps({'msgId': msgId, 'error':True,'msg': msg}))
+
+    def setResult(self, url, res, msgId, finish=True):
+        resStruct = {"pluginName": self.plugin_name, "url": url, "data": res, "finish": finish, "msgId": msgId}
         print(resStruct)
         RedisMixin().redis_db_frame.lpush(self.redis_result_queue_Name, json.dumps(resStruct))
 
@@ -166,3 +182,4 @@ class PlguinService(RedisMixin, LifeCycle, metaclass=abc.ABCMeta):
         self.setInfo(status="opening")
         self.initAll()
         self.listenMessageQueue()
+        threading.Thread(target=self.listenBroadCastMessageQueue,daemon=True).start()

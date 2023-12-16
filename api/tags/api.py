@@ -1,12 +1,12 @@
 import time
 
 import nb_log
-
 from ..tags import tag_blue
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Union
 from utils.sqlHelper import PostgresConnectionContextManager
 from quart_schema import validate_request, validate_response
+from utils.redis_manager import AioRedisManager
 import datetime
 from ..common import getProjectUsedPlugins, sqlInjectCheck
 from core.table import Table
@@ -14,6 +14,8 @@ from core.row import Row
 from copy import deepcopy
 from quart import websocket
 import json
+from urllib.parse import urlparse
+import copy
 
 
 @dataclass
@@ -177,32 +179,6 @@ class GetTagUsedPluginColumnsResponse():
     project_id: int
     tag_id: int
     data: List[PluginColumn]
-
-
-# #废除  删除used_plugin移到project表
-# @tag_blue.post('/getTagUsedPluginColumns')
-# @validate_request(GetTagUsedPluginColumnsRequest)
-# async def getTagUsedPlugin(data: GetTagUsedPluginColumnsRequest):
-#     with PostgresConnectionContextManager() as cur:
-#         cur.execute("SELECT used_plugin FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
-#         rows = cur.fetchall()
-#         res = rows[0][0]
-#     plugin_names = []
-#     if not res:
-#         return GetTagUsedPluginColumnsResponse(False, data.project_id, data.tag_id, [])
-#     for _ in res:
-#         plugin_names.append(_)
-#     print(plugin_names)
-#     columnsConfigList = []
-#     for i2 in plugin_names:
-#         print(i2)
-#         with PostgresConnectionContextManager() as cur:
-#             cur.execute("SELECT column_config from plugin where plugin_name= %s", (i2,))
-#             rows = cur.fetchall()
-#             rows[0][0]['plugin_name'] = i2
-#             columnsConfigList.append(rows[0][0])
-#
-#     return GetTagUsedPluginColumnsResponse(True, data.project_id, data.tag_id, columnsConfigList)
 
 
 @dataclass
@@ -409,13 +385,14 @@ async def getAssetDataFunc(data: GetTagAssetDataRequest):
     tmpdata = deepcopy(data.__dict__)
     tmpdata['total'] = total
 
-
     return (True, resData, 'ok', tmpdata)
+
+
 
 
 @tag_blue.websocket('/syncTable')
 async def syncTable():
-    await websocket.send(json.dumps({"msg":"hello"}))
+    await websocket.send(json.dumps({"msg": "hello"}))
     while True:
         try:
             dataJson = await websocket.receive_json()
@@ -428,6 +405,142 @@ async def syncTable():
                                       sort=dataJson['sort'],
                                       current_table=dataJson['current_table'])
         tableData = await getAssetDataFunc(data)
-        result =  {"status":tableData[0],"data":tableData[1],"msg":tableData[2],"info":tableData[3]}
+        runningMsgIdList = await AioRedisManager().get_redis().lrange('assetRunning', 0, -1)
+        for _ in tableData[1]['rows']:
+            res = await AioRedisManager().get_redis().hget('pluginTaskProgress', _['id'])
+            _['runningInfo'] = []
+            if res:
+                resList = json.loads(res)
+                for _2 in resList:
+                    res = _2.split('@')
+                    msgId = res[0]
+                    pluginName = res[1]
+                    if msgId in runningMsgIdList:
+                        running = True
+                    else:
+                        running = False
+                    _['runningInfo'].append({"runningPlugin": pluginName, "running": running, "msgId": msgId})
+            else:
+                _['runningInfo'] = []
+
+        result = {"status": tableData[0], "data": tableData[1], "msg": tableData[2], "info": tableData[3]}
         await websocket.send(json.dumps(result))
+
+
+def filter_url(url):
+    try:
+        if "://" not in url:
+            url = "http://" + url
+        result = urlparse(url)
+        hostname = result.hostname
+        if ":" in hostname:
+            hostname = hostname.split(":")[0]
+        return hostname
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def filterAsset(assetList: List[str]):
+    '''
+    过滤资产，去除重复资产，将所有资产转为domain或ip
+    :param assetList:
+    :return:
+    '''
+    tmpList = []
+    for _ in assetList:
+        tmp = {"asset_name": '', "original_assets": [], "type": ''}
+        find = 0
+        filtered = filter_url(_)
+        for _2 in tmpList:
+            if filtered == _2["asset_name"]:
+                _2["original_assets"].append(_)
+                find = 1
+                break
+        if find == 0:
+            tmp["asset_name"] = filtered
+            tmp["original_assets"].append(_)
+            # 判断filtered是ip还是domain
+            if filtered.replace('.', '').isdigit():
+                tmp["type"] = 'ip'
+            else:
+                tmp["type"] = 'domain'
+            tmpList.append(copy.deepcopy(tmp))
+    return tmpList
+
+
+@dataclass
+class addAssetToTagRequest():
+    project_id: int
+    tag_id: int
+    asset: List[str]
+    tag_name: str = field(default='')
+
+
+@tag_blue.post('/addAssetToTag')
+@validate_request(addAssetToTagRequest)
+async def addAssetToTag(data: addAssetToTagRequest):
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
+    # 判断asset存不存在表中
+    filteredAssetList = filterAsset(data.asset)
+    for asset in filteredAssetList:
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM asset WHERE asset_name=%s AND project_id =%s",
+                        (asset['asset_name'], data.project_id))
+            rows = cur.fetchone()
+            # 存在记录则更新tag_ids同时检测其original_assets列表中是否有相同的，没有则添加
+            if rows:
+                cur.execute("UPDATE asset SET tag_ids = tag_ids || %s WHERE asset_name = %s AND project_id=%s",
+                            (data.tag_id, asset['asset_name'], data.project_id))
+                cur.execute("SELECT original_assets FROM asset WHERE asset_name=%s AND project_id =%s",
+                            (asset['asset_name'], data.project_id))
+                rows = cur.fetchone()
+                original_assets = rows[0]
+                for _ in asset['original_assets']:
+                    if _ not in original_assets and _ != asset['asset_name']:
+                        original_assets.append(_)
+                cur.execute("UPDATE asset SET original_assets = %s WHERE asset_name = %s AND project_id=%s",
+                            (original_assets, asset['asset_name'], data.project_id))
+            else:
+                # 如果不存在asset则使用insert插入表中
+                cur.execute(
+                    "INSERT INTO asset (asset_name,project_id,tag_ids,original_assets,asset_type) VALUES (%s,%s,%s,%s,%s)",
+                    (asset['asset_name'], data.project_id, [data.tag_id], asset['original_assets'],asset['type']))
+    return {'status': True, 'msg': 'ok', 'data': data}
+
+
+@dataclass
+class deleteAssetFromTagRequest():
+    project_id: int
+    tag_id: int
+    asset_id: int
+    tag_name: str = field(default='')
+
+
+@tag_blue.post('/deleteAssetFromTag')
+@validate_request(addAssetToTagRequest)
+async def deleteAssetFromTag(data: deleteAssetFromTagRequest):
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
+    # 判断asset存不存在表中
+    # 通过asset_id查询资产记录 根据tag_id删除
+    with PostgresConnectionContextManager() as cur:
+        cur.execute("SELECT asset_name FROM asset WHERE id=%s AND project_id =%s", (data.asset_id, data.project_id))
+        rows = cur.fetchone()
+        asset_name = rows[0]
+        cur.execute("UPDATE asset SET tag_ids = array_remove(tag_ids,%s) WHERE asset_name = %s AND project_id=%s",
+                    (data.tag_id, asset_name, data.project_id))
+    return {'status': True, 'msg': 'ok', 'data': data}
+
+
+
 

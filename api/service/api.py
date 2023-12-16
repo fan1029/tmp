@@ -2,6 +2,7 @@ from ..service import service_blue
 from dataclasses import dataclass, field
 from quart_schema import validate_request, validate_response
 from utils.redis_manager import RedisMixin
+from utils.sqlHelper import PostgresConnectionContextManager
 from core.pluginManager import PluginManager
 import json
 
@@ -48,6 +49,7 @@ async def changeServiceStatus(data: changeServiceStatusRequest):
 
 @dataclass
 class runPluginRequest:
+    tagId: int
     pluginName: str
     assetId: int
     config: dict
@@ -63,10 +65,14 @@ async def runPlugin(data: runPluginRequest):
     if data.assetId == -1:
         return {'status': 400, 'msg': '请选择资产'}
     elif data.assetId == -2:
-        pass
+        # 根据tagId获取资产
+        with PostgresConnectionContextManager() as cur:
+            cur.execute('SELECT id from asset WHERE %s = ANY (tag_ids)', (data.tagId,))
+            assetList = cur.fetchall()
+            ids = [i[0] for i in assetList]
     else:
-        data.assetId = [data.assetId]
-    pluginObj().run(data.assetId, data.config)
+        ids = [data.assetId]
+    pluginObj().run(ids, data.config)
     return {'status': 200, 'msg': '任务已提交'}
 
 

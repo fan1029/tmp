@@ -49,7 +49,6 @@ class Service(RedisMixin, LoggerMixin):
         else:
             return False
 
-
     @staticmethod
     def getTaskCount(serviceName):
         '''
@@ -68,16 +67,45 @@ class Service(RedisMixin, LoggerMixin):
         '''
         return RedisMixin().redis_db_service.xrange(serviceName + '-task')
 
+    def addProgress(self, assetId, msgId):
+        tmp = self.redis_db_service.hget('pluginTaskProgress', assetId)
+        if tmp:
+            tmp = json.loads(tmp)
+            tmp.append(str(msgId) + '@' + self.pluginName)
+            self.redis_db_service.hset('pluginTaskProgress', assetId, json.dumps(tmp))
+        else:
+            self.redis_db_service.hset('pluginTaskProgress', assetId, json.dumps([str(msgId) + '@' + self.pluginName]))
+        pass
+
+    def delProgress(self, assetId, msgId):
+        tmp = self.redis_db_service.hget('pluginTaskProgress', assetId)
+        if tmp:
+            tmp = json.loads(tmp)
+            tmp.remove(str(msgId) + '@' + self.pluginName)
+            if tmp:
+                self.redis_db_service.hset('pluginTaskProgress', assetId, json.dumps(tmp))
+            else:
+                self.redis_db_service.hdel('pluginTaskProgress', assetId)
+        else:
+            return False
 
     def addTask(self, asset: Union[dict, List[dict]], config=None):
         if config is None:
             config = {}
         AssetsList = []
+        SendList = []
         if isinstance(asset, list):
             AssetsList = asset
         else:
             AssetsList.append(asset)
-        msgId = self.redis_db_service.xadd(self.taskQueueName,{"targets": json.dumps(AssetsList), "publishTime": str(int(time.time())),"config":json.dumps(config)})
+        for _ in AssetsList:
+            SendList.append(_['target'])
+
+        msgId = self.redis_db_service.xadd(self.taskQueueName,
+                                           {"targets": json.dumps(SendList), "publishTime": str(int(time.time())),
+                                            "config": json.dumps(config)})
+        for _ in AssetsList:
+            self.addProgress(_['assetId'], msgId)  # 显示进度用的
         return msgId
 
     def delTask(self, msgId):

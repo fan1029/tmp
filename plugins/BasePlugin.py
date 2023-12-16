@@ -66,6 +66,7 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         '''
         return traget
 
+
     def registerTargetMap(self, target: str, assetId: str):
         '''
         注册资产到资产表格
@@ -116,16 +117,20 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         for _ in res:
             if _['target'] not in duplicateCheckTmp:
                 if _['target']:
-                    tmp2.append(_)
-                    duplicateCheckTmp.append(_['target'])
+                    if not self.getAssetIdByTarget(_['target']):
+                        tmp2.append(_)
+                        duplicateCheckTmp.append(_['target'])
         for _ in tmp2:
             self.init_plugin_table(_.get('assetName'))
             self.registerTargetMap(_['target'], _.get('assetId'))
         tmp3 = []
         for _ in tmp2:
             tmp3.append(_['target'])
-        self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh,displayType='ElNotification')
-        return tmp3
+        if len(tmp3) == 0:
+            self.notifier.error(f'目标正在运行！', title=self.pluginNameZh,displayType='ElNotification')
+        else:
+            self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh,displayType='ElNotification')
+        return tmp2
 
     def run(self, ids: list, config: dict):
         tmpAssets = [Asset().initAsset(id=_) for _ in ids]
@@ -148,12 +153,12 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
 
         tmp = self.getAssetIdByTarget(target)
         if tmp:
-
             asset = Asset().initAsset(id=tmp)
             self.onResult(asset, data)
             if data.get('finish'):
                 self.delAssetIdByTarget(target)
                 self.notifier.info(f'任务完成,target:{target}', title=self.pluginNameZh,displayType="ElNotification")
+                self.getService(self.pluginName).delProgress(asset.id, data.get('msgId'))
         else:
             self.notifier.error(f'结果回调时未找到资产的原始映射资产,target:{target}。结果丢弃', title=self.pluginNameZh)
 

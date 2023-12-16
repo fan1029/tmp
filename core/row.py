@@ -26,7 +26,7 @@ class Row(TableBase):
         for _ in self.columnList:
             containerObj = _.getContainerClass()
             tmpData = initColumnValueDB(pluginName=_.pluginName, asset_original=self.asset_name, columnName=_.name)
-            if tmpData:
+            if tmpData and tmpData[0]is not None:
                 container = containerObj.from_dict(tmpData[0])
             else:
                 container = containerObj()

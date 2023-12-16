@@ -2,6 +2,7 @@ from plugins import importPlugins
 from utils.redis_manager import RedisMixin
 from core.pluginManager import PluginManager
 from plugins.BasePlugin import BasePlugin
+from core.notify import Notify
 import json
 
 if __name__ == '__main__':
@@ -14,5 +15,8 @@ if __name__ == '__main__':
         if ResultList:
             for _ in ResultList:
                 _ = json.loads(_)
-                pluginObj: BasePlugin = pluginManager.getPlugin(_.get('pluginName'))
-                pluginObj().onBeforeResult(_.get('url'), _)
+                if _.get('error'):
+                    Notify('System').error(_.get('msg'))
+                else:
+                    pluginObj: BasePlugin = pluginManager.getPlugin(_.get('pluginName'))
+                    pluginObj().onBeforeResult(_.get('url'), _)

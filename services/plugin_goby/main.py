@@ -47,7 +47,7 @@ def initGobyService():
 
 
 @LifeCycle.toolRunning
-def gobyScan(msgId: str,targets:list,config:dict):
+def gobyScan(msgId: str, targets: list, config: dict):
     urls = targets
     # if type(urls) == str:
     #     urls = json.loads(urls)
@@ -61,11 +61,19 @@ def gobyScan(msgId: str,targets:list,config:dict):
         vulnerability=Vulnerability(type=config.get('vulScanType')),
         options=Options(rate=config.get('scanRate')),
     )
-    res, msg = runScan(host, scanModel)
+    try:
+        res, msg = runScan(host, scanModel)
+    except Exception as e:
+        nb_log.error(e)
+        service.reportError(msgId, f"扫描任务开始失败，请重启消费端-{service.consumer_identification}")
+        service.ackMsg(msgId)
+        return
     if res:
         taskId = msg
     else:
         nb_log.error('gobyScan: 任务启动失败' + msg)
+        service.reportError(msgId, f"扫描任务开始失败，请重启消费端-{service.consumer_identification}")
+        service.ackMsg(msgId)
         return
 
     while True:
@@ -83,9 +91,9 @@ def gobyScan(msgId: str,targets:list,config:dict):
                     assetFiltered = _['ip']
                 if res:
                     if int(msg) == 100:
-                        service.setResult(assetFiltered, _,finish=True)  # 存储扫描数据
+                        service.setResult(assetFiltered, _, msgId=msgId, finish=True)  # 存储扫描数据
                     else:
-                        service.setResult(assetFiltered, _,finish=False)
+                        service.setResult(assetFiltered, _, msgId=msgId, finish=False)
         if res:
             if int(msg) == 100:
                 service.ackMsg(msgId)

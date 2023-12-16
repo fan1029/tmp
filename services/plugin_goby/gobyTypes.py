@@ -69,7 +69,7 @@ class Options(Base):
     enableSutraQueryJson: bool = field(default=False)
     socketTimeout: int = field(default=3)
     retryTimes: int = field(default=0)
-    checkAliveMode: int = field(default=1)
+    checkAliveMode: int = field(default=0)
     isEmptyScan: bool = field(default=False)
 
 
