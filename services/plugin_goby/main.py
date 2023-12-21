@@ -1,10 +1,9 @@
-from services.plugin_goby.lifeCycleFuntion_manager import LifeCycle
-from services.plugin_goby.plugin_service import PlguinService
+from pluginService.lifeCycleFuntion_manager import LifeCycle
+from pluginService.plugin_service import PlguinService
 from multiprocessing import Process
 from services.plugin_goby.gobyTypes import ScanModel, AssetSearchModel, GobyAsset, Options, OptionsAssetSearch, \
     Vulnerability, PluginInfo
 from services.plugin_goby.common import runScan, checkProgress, assetSearch, dataStore
-from core.rowManager import RowManagerProxy
 from type.elements import Tag, Text, Popover, Action, TagAttribute, TextAttribute
 from type.enums import SIZE, TAG_THEME, TAG_ROUND, TEXT_TYPE, TEXT_TAG
 import nb_log
@@ -47,10 +46,8 @@ def initGobyService():
 
 
 @LifeCycle.toolRunning
-def gobyScan(msgId: str, targets: list, config: dict):
+def gobyScan(targets: list, config: dict):
     urls = targets
-    # if type(urls) == str:
-    #     urls = json.loads(urls)
     host = GobyFreeProcessQueue.get()
     nb_log.debug('gobyScan: 获取使用进程API' + host)
     scanModel = ScanModel(
@@ -65,17 +62,17 @@ def gobyScan(msgId: str, targets: list, config: dict):
         res, msg = runScan(host, scanModel)
     except Exception as e:
         nb_log.error(e)
-        service.reportError(msgId, f"扫描任务开始失败，请重启消费端-{service.consumer_identification}")
-        service.ackMsg(msgId)
+        service.reportError(f"请关闭运行端代理程序,重启消费端-{service.consumer_identification}", targets=targets)
+        GobyFreeProcessQueue.put(host)
         return
     if res:
         taskId = msg
     else:
         nb_log.error('gobyScan: 任务启动失败' + msg)
-        service.reportError(msgId, f"扫描任务开始失败，请重启消费端-{service.consumer_identification}")
-        service.ackMsg(msgId)
+        service.reportError(f"请关闭运行端代理程序,请重启消费端-{service.consumer_identification}", targets=targets)
+        GobyFreeProcessQueue.put(host)
         return
-
+    finishFlag = False
     while True:
         time.sleep(5)
         nb_log.info('进入check！')
@@ -83,6 +80,7 @@ def gobyScan(msgId: str, targets: list, config: dict):
         res2, msg2 = assetSearch(host, taskId)
         nb_log.info((res2, msg2))
         nb_log.info((res, msg))
+
         if res2:
             for _ in msg2:
                 if _['hostnames'][0] != "":
@@ -91,17 +89,23 @@ def gobyScan(msgId: str, targets: list, config: dict):
                     assetFiltered = _['ip']
                 if res:
                     if int(msg) == 100:
-                        service.setResult(assetFiltered, _, msgId=msgId, finish=True)  # 存储扫描数据
+                        finishFlag = True
+                        service.setResult(assetFiltered, _, finish=True)  # 存储扫描数据
+                        nb_log.info('gobyScan: 任务已完成')
+                        GobyFreeProcessQueue.put(host)
                     else:
-                        service.setResult(assetFiltered, _, msgId=msgId, finish=False)
-        if res:
-            if int(msg) == 100:
-                service.ackMsg(msgId)
-                nb_log.info('gobyScan: 任务已完成')
-                GobyFreeProcessQueue.put(host)
+                        service.setResult(assetFiltered, _, finish=False)
+                        nb_log.info(f'gobyScan: 任务进度：{str(msg)}%')
+            if finishFlag:
                 break
-            else:
-                print('任务进度：' + str(msg) + '%')
+        else:
+            if res and int(msg) == 100:
+                finishFlag = True
+                nb_log.info('gobyScan: 任务已完成')
+                service.reportError('目标无结果返回',targets)
+                GobyFreeProcessQueue.put(host)
+
+                return True
 
 
 def reg():

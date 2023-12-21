@@ -136,7 +136,7 @@ class TagContainer(Container):
 class ImageContainer(Container):
     def __init__(self, ImageStyle: ImageAttribute = ImageAttribute()):
         super().__init__()
-        self.values = []
+        self.values: List[Image] = []
         self.style = ImageStyle
         self.elementType = 'Image'
 
@@ -162,11 +162,6 @@ class ImageContainer(Container):
         return tmp
 
     def toJson(self):
-        # tmp = self.__dict__
-        # c = deepcopy(tmp['values'])
-        # v = deepcopy(tmp['style'])
-        # tmp['values'] = [i.toDict() for i in c]
-        # tmp['style'] = v.toDict()
         return json.dumps(self.to_dict())
 
     @staticmethod
@@ -236,37 +231,3 @@ if __name__ == '__main__':
     c = a.toJson()
     a2 = TagContainer.toDataClass(c)
     print(a2)
-    # textStyle = TextAttribute()
-    # a = TextContainer(textStyle)
-    # c = textStyle.toDict()
-    #
-    # a.add(Text('123123123123123'))
-    # c1 = a.toJson()
-    # a2 = TextContainer.toDataClass(c1)
-    # print(a2)
-    # tableStyle = TableAttribute(showHeader=False,header=["test1", "test2"])
-    # print(tableStyle.toDict())
-    # a = TableContainer(tableStyle)
-    # a.set(Row(['1', '2']))
-    # print(a.values)
-    # c = a.toJson()
-    # a2 = a.toDataClass(c)
-    # print(a2)
-    # c = a.serialize()
-    # print(c)
-    # a2 = TextElementCell.unserialize(c)
-    # print(a2.get())
-    # c = Tag('aaaa',theme='dark',round=True)
-    # # print(c.__dict__)
-    # a = TagElementCell()
-    # a.set(c)
-    # c = a.serialize()
-    # print(c)
-    # c = TagElementCell.unserialize(c)
-    # print(c.__dict__)
-    # aaa = globals()
-    # print(aaa)
-    # a = TextElementCell()
-    # a.set('123123123123123','marked',size='small')
-    # a.clear()
-    # print(a.serialize())

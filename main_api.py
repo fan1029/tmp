@@ -37,12 +37,6 @@ async def ws():
     websocketUsers.append(websocket._get_current_object())
     await websocket.send(json.dumps({"msg": "通知服务连接成功"}))
     while True:
-        recevie = await websocket.receive()
-        Msg = json.loads(recevie)
-        if Msg.get('type') == 'broadcast':
-            title = Msg.get('title')
-            content = Msg.get('content')
-            Notify('System').info(title, content,displayType='ElNotification')
         msg = await redis.blpop('notify', 30)
         if msg:
             for _ in websocketUsers:
@@ -58,4 +52,4 @@ if __name__ == '__main__':
     from plugins import importPlugins
 
     importPlugins()
-    app.run(port=5000)
+    app.run(port=5000,)

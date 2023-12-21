@@ -81,6 +81,7 @@ class _KeepAliveTimeThread(threading.Thread):
         while 1:
             try:
                 func, args, kwargs = self.pool.work_queue.get(block=True, timeout=self.pool.KEEP_ALIVE_TIME)
+
             except queue.Empty:
                 with self.pool._lock_for_judge_threads_free_count:
                     # print(self.pool.threads_free_count)

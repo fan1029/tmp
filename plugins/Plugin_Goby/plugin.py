@@ -1,7 +1,7 @@
 from plugins.BasePlugin import BasePlugin
 import multiprocessing
 from plugins.Plugin_Goby.common import runScan, checkProgress, getStatisticsData, assetSearch, stopScan, dataStore
-# from services.screenshot.main import runFromPythonImport
+# from services.plugin_screenshot.main import runFromPythonImport
 from core.rowManager import RowManagerProxy
 from type.elements import Tag, Text, Popover, Action, TagAttribute, TextAttribute
 from type.enums import SIZE, TAG_THEME, TAG_ROUND, TEXT_TYPE, TEXT_TAG
@@ -23,6 +23,7 @@ class Plugin_Goby(BasePlugin):
         'vul': '漏洞',
         'port': '端口',
     }
+
     runMode = 1
     postgreSqlTableCreatteSql = f'''
     CREATE TABLE IF NOT EXISTS {tableName} (
@@ -37,11 +38,6 @@ class Plugin_Goby(BasePlugin):
 
     def filter(self, target):
         return target
-
-    # def startService(self):
-    #     from services.plugin_goby.main import runFromPythonImport
-    #     p = multiprocessing.Process(target=runFromPythonImport)
-    #     p.start()
 
     @classmethod
     def onResult(cls, asset: Asset, result: dict):
@@ -68,6 +64,17 @@ class Plugin_Goby(BasePlugin):
                 portList = [(v.get('port') + ':' + v.get('protocol')) for v in portDict.values()]
                 portTagList = [Tag(content=i) for i in portList]
                 asset.setCell('port', portTagList)
+                for v in portDict.values():
+                    if v.get('protocol') == 'http':
+                        if str(v.get('port')) == '80':
+                            asset.addOriginalAsset("http://"+asset.getAssetName())
+                        else:
+                            asset.addOriginalAsset("http://" + asset.getAssetName() + ':' + v.get('port'))
+                    elif v.get('protocol') == 'https':
+                        if str(v.get('port')) == '443':
+                            asset.addOriginalAsset("https://"+asset.getAssetName())
+                        else:
+                            asset.addOriginalAsset("https://" + asset.getAssetName() + ':' + v.get('port'))
         dataStore(result.get('data'))
 
 

@@ -359,7 +359,7 @@ async def getAssetDataFunc(data: GetTagAssetDataRequest):
     pm = PluginManager()
     if not data.current_table:
         # data.current_table = getProjectUsedPlugins(data.project_id)
-        data.current_table = ['plugin_goby']
+        data.current_table = ['plugin_goby','plugin_screenshot']
     table = Table(data.current_table)
     query = f"""
     SELECT asset_name,id,original_assets FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_name {data.sort} LIMIT %s OFFSET %s 
@@ -405,23 +405,23 @@ async def syncTable():
                                       sort=dataJson['sort'],
                                       current_table=dataJson['current_table'])
         tableData = await getAssetDataFunc(data)
-        runningMsgIdList = await AioRedisManager().get_redis().lrange('assetRunning', 0, -1)
-        for _ in tableData[1]['rows']:
-            res = await AioRedisManager().get_redis().hget('pluginTaskProgress', _['id'])
-            _['runningInfo'] = []
-            if res:
-                resList = json.loads(res)
-                for _2 in resList:
-                    res = _2.split('@')
-                    msgId = res[0]
-                    pluginName = res[1]
-                    if msgId in runningMsgIdList:
-                        running = True
-                    else:
-                        running = False
-                    _['runningInfo'].append({"runningPlugin": pluginName, "running": running, "msgId": msgId})
-            else:
-                _['runningInfo'] = []
+        # runningMsgIdList = await AioRedisManager().get_redis().lrange('assetRunning', 0, -1)
+        # for _ in tableData[1]['rows']:
+        #     res = await AioRedisManager().get_redis().hget('pluginTaskProgress', _['id'])
+        #     _['runningInfo'] = []
+        #     if res:
+        #         resList = json.loads(res)
+        #         for _2 in resList:
+        #             res = _2.split('@')
+        #             msgId = res[0]
+        #             pluginName = res[1]
+        #             if msgId in runningMsgIdList:
+        #                 running = True
+        #             else:
+        #                 running = False
+        #             _['runningInfo'].append({"runningPlugin": pluginName, "running": running, "msgId": msgId})
+        #     else:
+        #         _['runningInfo'] = []
 
         result = {"status": tableData[0], "data": tableData[1], "msg": tableData[2], "info": tableData[3]}
         await websocket.send(json.dumps(result))
@@ -509,21 +509,20 @@ async def addAssetToTag(data: addAssetToTagRequest):
             else:
                 # 如果不存在asset则使用insert插入表中
                 cur.execute(
-                    "INSERT INTO asset (asset_name,project_id,tag_ids,original_assets,asset_type) VALUES (%s,%s,%s,%s,%s)",
-                    (asset['asset_name'], data.project_id, [data.tag_id], asset['original_assets'],asset['type']))
+                    "INSERT INTO asset (asset_name,project_id,tag_ids,original_assets,asset_type,label) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (asset['asset_name'], data.project_id, [data.tag_id], asset['original_assets'],asset['type'],[asset['type']]))
+
     return {'status': True, 'msg': 'ok', 'data': data}
 
 
 @dataclass
-class deleteAssetFromTagRequest():
+class deleteAssetFromTagRequest:
     project_id: int
     tag_id: int
     asset_id: int
-    tag_name: str = field(default='')
-
 
 @tag_blue.post('/deleteAssetFromTag')
-@validate_request(addAssetToTagRequest)
+@validate_request(deleteAssetFromTagRequest)
 async def deleteAssetFromTag(data: deleteAssetFromTagRequest):
     if data.tag_id == -1:
         # 根据tag_name获取tag_id

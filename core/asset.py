@@ -153,11 +153,12 @@ class Asset(RedisMixin):
     def getAssetType(self):
         return self.asset_type
 
-    def setLabel(self, label):
+    def addLabel(self, label):
         # label在数据库中是数组
         self.label.append(label)
+
         with PostgresConnectionContextManager() as cur:
-            cur.execute('UPDATE asset SET label=array_append(label,%s) WHERE id=%s', (label, self.id,))
+            cur.execute('UPDATE asset SET label=ARRAY(SELECT DISTINCT UNNEST(array_append(label,%s))) WHERE id=%s', (label, self.id,))
 
     def delLabel(self, label):
         self.label.remove(label)
@@ -167,8 +168,15 @@ class Asset(RedisMixin):
     def addOriginalAsset(self, original_asset):
         self.original_assets.append(original_asset)
         with PostgresConnectionContextManager() as cur:
-            cur.execute('UPDATE asset SET original_assets=array_append(original_assets,%s) WHERE id=%s',
-                        (original_asset, self.id,))
+            cur.execute('''
+                UPDATE asset 
+                SET original_assets = ARRAY(
+                    SELECT DISTINCT UNNEST(
+                        ARRAY_APPEND(original_assets, %s)
+                    )
+                ) 
+                WHERE id = %s
+            ''', (original_asset, self.id,))
 
     def delOriginalAsset(self, original_asset):
         self.original_assets.remove(original_asset)
@@ -184,8 +192,7 @@ class Asset(RedisMixin):
     def getAssetName(self):
         return self.asset_name
 
-    def getAssetType(self):
-        return self.asset_type
+
 
     def getOriginalAssets(self):
         return self.original_assets

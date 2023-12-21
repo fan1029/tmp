@@ -81,13 +81,27 @@ class Service(RedisMixin, LoggerMixin):
         tmp = self.redis_db_service.hget('pluginTaskProgress', assetId)
         if tmp:
             tmp = json.loads(tmp)
-            tmp.remove(str(msgId) + '@' + self.pluginName)
+            try:
+                tmp.remove(str(msgId) + '@' + self.pluginName)
+            except:
+                return False
             if tmp:
                 self.redis_db_service.hset('pluginTaskProgress', assetId, json.dumps(tmp))
             else:
                 self.redis_db_service.hdel('pluginTaskProgress', assetId)
         else:
             return False
+
+    def delProgressByMsgId(self, msgId):
+        '''
+        通过msgId删除进度
+        :param msgId:
+        :return:
+        '''
+        tmp = self.redis_db_service.hgetall('pluginTaskProgress')
+        for _ in tmp:
+            if msgId in json.loads(tmp[_]):
+                self.delProgress(_, msgId)
 
     def addTask(self, asset: Union[dict, List[dict]], config=None):
         if config is None:

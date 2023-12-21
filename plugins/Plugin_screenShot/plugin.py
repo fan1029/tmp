@@ -1,12 +1,20 @@
+from typing import List
+
+import nb_log
+
 from plugins.BasePlugin import BasePlugin
-import multiprocessing
+from core.asset import Asset
+from type.elements import Image,Tag
+import base64
 
 
 
 class Plugin_screenShot(BasePlugin):
-    pluginName = 'screenshot'
+    pluginName = 'plugin_screenshot'
+    pluginNameZh = '截图插件'
     tableName = pluginName + '_table'
     author = 'maple'
+    scanTargetType = ['original_assets']
     version = '1.0'
     description = '截图插件。'
     columnDict = {
@@ -25,13 +33,18 @@ class Plugin_screenShot(BasePlugin):
         pass
 
     def filter(self, target):
+        #如果不是http或者https开头的，就加上http
+        if not target.startswith('http'):
+            target = 'http://' + target
         return target
 
-    # def startService(self):
-    #     from services.screenshot.main import runFromPythonImport
-    #     p = multiprocessing.Process(target=runFromPythonImport)
-    #     p.start()
+    def onBeforePerHandle(self, assets: List[Asset]) ->None:
+        for asset in assets:
+            asset.clearCell('screen_img')
+        #清除原始数据
 
     @classmethod
-    def onResult(self, url: str, result: dict):
-        pass
+    def onResult(self, asset: Asset, result: dict):
+        imgData = result.get('data')
+        asset.addCell('screen_img', Image(content=imgData))
+

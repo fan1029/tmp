@@ -12,7 +12,6 @@ if __name__ == '__main__':
     hostName = socket.gethostname()
     regDict = regPlugins()
     processDict = {}
-    print(regDict)
     while True:
         time.sleep(5)
         # 循环监听plugin-center中的key，检测与regDict中key相同的值
@@ -23,7 +22,6 @@ if __name__ == '__main__':
                 nb_log.info(f'开启{k}')
                 tmp['status'] = 'opening'
                 RedisMixin().redis_db_service.hset('plugin-center',k,json.dumps(tmp))
-                # v()
                 p = multiprocessing.Process(target=v)
                 processDict[k] = p
                 p.start()

@@ -1,7 +1,4 @@
 
-
-
-
 class LifeCycle():
     instance=None
     funDict={}
@@ -27,7 +24,6 @@ class LifeCycle():
 
     @staticmethod
     def toolRunning(fun):
-
         def wrapper(*args,**kwargs):
             fun(*args,**kwargs)
         LifeCycle.funDict['toolRunning'] = wrapper

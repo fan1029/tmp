@@ -58,14 +58,13 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         '''
         addAssetOriginalToTable(self.pluginName, asset_origianl)
 
-    def fileter(self, traget: str):
+    def filter(self, traget: str):
         '''
         资产过滤器，将资产转换为想要的格式。
         :param target:
         :return:
         '''
         return traget
-
 
     def registerTargetMap(self, target: str, assetId: str):
         '''
@@ -97,20 +96,24 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         :param asseta:
         :return:
         '''
-
         tmp = []
         res = []
-        for _ in assets:
+        for _ in assets:  # 检测 ip/domain类型的资产
             if _.getAssetType() in self.scanTargetType:
                 tmp.append(_)
+        if 'original_assets' in self.scanTargetType:  # 检测original_assets类型的资产
+            for _ in assets:
+                tmpList = _.getOriginalAssets()
+                if tmpList:
+                    tmp.append(_)
         for _ in tmp:
-            if 'originalAssets' not in self.scanTargetType:
+            if 'original_assets' not in self.scanTargetType:
                 res.append({'assetId': _.id, 'assetName': _.getAssetName(), 'target': _.getAssetName()})
             else:
                 for i in _.original_assets:
                     res.append({'assetId': _.id, 'assetName': _.getAssetName(), 'target': i})
         for _ in res:
-            _['target'] = self.fileter(_.get('target'))
+            _['target'] = self.filter(_.get('target'))
         # 删除res中重复的target
         tmp2 = []
         duplicateCheckTmp = []
@@ -127,13 +130,22 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         for _ in tmp2:
             tmp3.append(_['target'])
         if len(tmp3) == 0:
-            self.notifier.error(f'目标正在运行！', title=self.pluginNameZh,displayType='ElNotification')
+            self.notifier.error(f'目标正在运行！', title=self.pluginNameZh, displayType='ElNotification')
         else:
-            self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh,displayType='ElNotification')
+            self.notifier.info(f'目标过滤完成,目标数量{len(tmp3)},准备执行！', title=self.pluginNameZh,
+                               displayType='ElNotification')
         return tmp2
 
+    def onBeforePerHandle(self, assets: List[Asset])->None:
+        '''
+        资产预处理前的操作,用于对资产内容清除等其他操作
+        :param assets:
+        :return:
+        '''
+        pass
     def run(self, ids: list, config: dict):
         tmpAssets = [Asset().initAsset(id=_) for _ in ids]
+        self.onBeforePerHandle(tmpAssets)
         AssetsDictList = self.targetPerHandle(tmpAssets)
         if self.runMode == 0:
             for _ in AssetsDictList:
@@ -157,10 +169,19 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
             self.onResult(asset, data)
             if data.get('finish'):
                 self.delAssetIdByTarget(target)
-                self.notifier.info(f'任务完成,target:{target}', title=self.pluginNameZh,displayType="ElNotification")
+                self.notifier.info(f'任务完成,target:{target}', title=self.pluginNameZh, displayType="ElNotification")
                 self.getService(self.pluginName).delProgress(asset.id, data.get('msgId'))
         else:
             self.notifier.error(f'结果回调时未找到资产的原始映射资产,target:{target}。结果丢弃', title=self.pluginNameZh)
+
+    def onError(self, msgId: str, errorMsg: str, targets: list):
+        for _ in targets:
+            tmp = self.getAssetIdByTarget(_)
+            asset = Asset().initAsset(id=tmp)
+            self.notifier.error(f'{asset.getAssetName()}扫描失败{errorMsg}', title=self.pluginNameZh,
+                                displayType="ElNotification")
+            self.delAssetIdByTarget(_)
+            self.getService(self.pluginName).delProgress(asset.id, msgId)
 
     def onResult(self, asset: Asset, result: dict):
         pass
