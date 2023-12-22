@@ -7,6 +7,7 @@ from plugins.common import pluginLock, pluginUnlock, pushUndoQueue, removeUndoQu
     registerAsset, addAssetOriginalToTable, checkAndCreatePlutinTable
 from core.service import ServiceMixIn
 from core.notify import NotifyMixin
+import hashlib
 
 
 class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=abc.ABCMeta):
@@ -51,12 +52,39 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
         '''
         pass
 
-    def init_plugin_table(self, asset_origianl: str):
+    def init_plugin_table(self, asset_id: int):
         '''
         初始化插件表格表，pluginname_table.添加asset_original
         :return:
         '''
-        addAssetOriginalToTable(self.pluginName, asset_origianl)
+        addAssetOriginalToTable(self.pluginName, asset_id)
+
+    def storeToStatic(self,content,isBytes=False):
+        '''
+        将结果存储到静态文件
+        :param content:
+        :return:
+        '''
+        name = hashlib.md5(content).hexdigest()
+        if isBytes:
+            with open(f'static/{name}','wb') as f:
+                f.write(content)
+        else:
+            with open(f'static/{name}','w') as f:
+                f.write(content)
+        return f"/static/{name}"
+
+    @staticmethod
+    def storePicToStatic(content,picType='png'):
+        '''
+        将结果存储到静态文件
+        :param content:
+        :return:
+        '''
+        name = hashlib.md5(content).hexdigest()
+        with open(f'static/{name}.{picType}','wb') as f:
+            f.write(content)
+        return f"/static/{name}.{picType}"
 
     def filter(self, traget: str):
         '''
@@ -124,7 +152,7 @@ class BasePlugin(LoggerMixin, RedisMixin, ServiceMixIn, NotifyMixin, metaclass=a
                         tmp2.append(_)
                         duplicateCheckTmp.append(_['target'])
         for _ in tmp2:
-            self.init_plugin_table(_.get('assetName'))
+            self.init_plugin_table(_.get('assetId'))
             self.registerTargetMap(_['target'], _.get('assetId'))
         tmp3 = []
         for _ in tmp2:

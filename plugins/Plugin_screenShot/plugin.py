@@ -44,7 +44,9 @@ class Plugin_screenShot(BasePlugin):
         #清除原始数据
 
     @classmethod
-    def onResult(self, asset: Asset, result: dict):
+    def onResult(cls, asset: Asset, result: dict):
         imgData = result.get('data')
-        asset.addCell('screen_img', Image(content=imgData))
+        picBytes = base64.b64decode(imgData.encode('utf-8'))
+        path = cls.storePicToStatic(picBytes)
+        asset.addCell('screen_img', Image(content=path))
 

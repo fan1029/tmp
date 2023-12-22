@@ -10,9 +10,9 @@ import json
 
 
 class RowManager():
-    def __init__(self, pluginName: str, asset_name: str):
+    def __init__(self, pluginName: str, asset_id: int):
         self.pluginName = pluginName.lower()
-        self.asset_name: str = asset_name
+        self.asset_id: int = asset_id
         self.column: List[Column] = []
         self.getAllColumn()
 
@@ -30,8 +30,11 @@ class RowManager():
     def getCellType(column: Column):
         return column.type
 
-    def setAsset(self, asset_name):
-        self.asset_name = asset_name
+    def setAsset(self, asset_id):
+        self.asset_id = asset_id
+
+    def setAssetId(self, asset_id):
+        self.asset_id = asset_id
 
     def getColumn(self, columnName: str):
         for _ in self.column:
@@ -40,7 +43,7 @@ class RowManager():
 
     def initColumnValue(self, column: Column):
         # 从pluginName_table表中获取对应的cell对象
-        a = initColumnValueDB(self.pluginName, self.asset_name, column.name)  # 查插件表中对应列的数据
+        a = initColumnValueDB(self.pluginName, self.asset_id, column.name)  # 查插件表中对应列的数据
         if a is None:
             # raise Exception('数据库中没有对应的记录')
             cellClass = globals()[column.type + 'Container']
@@ -86,7 +89,7 @@ class RowManager():
 
     def submitOneRow(self, column: Column):
         cellJson = column.container.toJson()
-        submitOneRowDB(self.pluginName, self.asset_name, column.name, cellJson)
+        submitOneRowDB(self.pluginName, self.asset_id, column.name, cellJson)
 
     def submitRow(self, columnName: str = ''):
 
@@ -232,7 +235,7 @@ class Asset(RedisMixin):
         :return:
         '''
         pluginName = self.getPluginNameByColumnName(cloName)
-        rowManager = RowManager(pluginName, self.asset_name)
+        rowManager = RowManager(pluginName, self.id)
         if isinstance(cell, list):
             rowManager.cellListSet(cloName, cell)
         else:
@@ -246,7 +249,7 @@ class Asset(RedisMixin):
         :return:
         '''
         pluginName = self.getPluginNameByColumnName(cloName)
-        rowManager = RowManager(pluginName, self.asset_name)
+        rowManager = RowManager(pluginName, self.id)
         return rowManager.cellGet(cloName)
 
     def addCell(self, cloName, cell: BaseElement):
@@ -257,7 +260,7 @@ class Asset(RedisMixin):
         :return:
         '''
         pluginName = self.getPluginNameByColumnName(cloName)
-        rowManager = RowManager(pluginName, self.asset_name)
+        rowManager = RowManager(pluginName, self.id)
         rowManager.cellAdd(cloName, cell)
         rowManager.submitRow(cloName)
 
@@ -268,7 +271,7 @@ class Asset(RedisMixin):
         :return:
         '''
         pluginName = self.getPluginNameByColumnName(cloName)
-        rowManager = RowManager(pluginName, self.asset_name)
+        rowManager = RowManager(pluginName, self.id)
         rowManager.cellClear(cloName)
         rowManager.submitRow(cloName)
 

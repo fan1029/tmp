@@ -2,8 +2,7 @@
 from utils.sqlHelper import PostgresConnectionContextManager
 
 
-
-def submitOneRowDB(pluginName, asset_original, columnName, cellJson):
+def submitOneRowDB(pluginName, asset_id, columnName, cellJson):
     with PostgresConnectionContextManager() as db_cursor:
         # 检查存不存在对应的行，有则更新，没有则添加
         # inject vul
@@ -11,8 +10,8 @@ def submitOneRowDB(pluginName, asset_original, columnName, cellJson):
             "SELECT * FROM " +
             pluginName +
             '_table' +
-            " WHERE asset_original = %s",
-            (asset_original,
+            " WHERE asset_id = %s",
+            (asset_id,
              ))
         a = db_cursor.fetchone()
         if a:
@@ -22,19 +21,17 @@ def submitOneRowDB(pluginName, asset_original, columnName, cellJson):
                 '_table' +
                 " SET " +
                 columnName +
-                " = %s WHERE asset_original = %s",
+                " = %s WHERE asset_id = %s",
                 (cellJson,
-                 asset_original))
+                 asset_id))
         else:
             db_cursor.execute(
                 "INSERT INTO " +
                 pluginName +
                 '_table' +
-                " (asset_original," +
+                " (asset_id," +
                 columnName +
-                ") VALUES (%s,%s)",
-                (asset_original,
-                 cellJson))
+                ") VALUES (%s,%s)", (asset_id, cellJson))
 
 
 def submitRowColorDB(asset_original, color):
@@ -53,6 +50,7 @@ def getAllColumnDB(pluginName):
         a = db_cursor.fetchall()
     return a
 
+
 def getAllColumnNameDB(pluginName):
     with PostgresConnectionContextManager() as db_cursor:
         db_cursor.execute(
@@ -60,6 +58,7 @@ def getAllColumnNameDB(pluginName):
             (pluginName,))
         a = db_cursor.fetchall()
     return a
+
 
 def getColumnDB(pluginName, columnName):
     with PostgresConnectionContextManager() as db_cursor:
@@ -70,7 +69,7 @@ def getColumnDB(pluginName, columnName):
     return a
 
 
-def initColumnValueDB(pluginName, asset_original, columnName):
+def initColumnValueDB(pluginName, asset_id, columnName):
     with PostgresConnectionContextManager() as db_cursor:
         # inject vul
         db_cursor.execute(
@@ -79,46 +78,17 @@ def initColumnValueDB(pluginName, asset_original, columnName):
             " FROM " +
             pluginName +
             '_table' +
-            " WHERE asset_original = %s",
-            (asset_original,
+            " WHERE asset_id = %s",
+            (asset_id,
              ))
         a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
     return a
 
-def initColumnValueDB_id(pluginName, id, columnName):
-    with PostgresConnectionContextManager() as db_cursor:
-        # inject vul
-        db_cursor.execute(
-            "SELECT " +
-            columnName +
-            " FROM " +
-            pluginName +
-            '_table' +
-            " WHERE id = %s",
-            (id,
-             ))
-        a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
-    return a
-
-
-def initColumnContainerDB(pluginName, asset_original, columnName):
-    with PostgresConnectionContextManager() as db_cursor:
-        # inject vul
-        db_cursor.execute(
-            "SELECT " +
-            columnName +
-            " FROM " +
-            pluginName +
-            '_table' +
-            " WHERE asset_original = %s",
-            (asset_original,
-             ))
-        a = db_cursor.fetchone()  # (,None),None查不到和查出来什么都没有是不一样的
-    return a
 
 def is_basic_type(obj):
     basic_types = [int, bool, float, str, list, dict, tuple]
     return type(obj) in basic_types
 
-def idToAsset(id:int):
+
+def idToAsset(id: int):
     pass

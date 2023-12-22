@@ -1,4 +1,4 @@
-from core.common import getAllColumnDB, getAllColumnNameDB, initColumnValueDB, initColumnValueDB_id
+from core.common import getAllColumnDB, getAllColumnNameDB, initColumnValueDB
 from type.myTypes import Asset
 from core.column import Column
 from typing import Union, List
@@ -25,7 +25,7 @@ class Row(TableBase):
         '''
         for _ in self.columnList:
             containerObj = _.getContainerClass()
-            tmpData = initColumnValueDB(pluginName=_.pluginName, asset_original=self.asset_name, columnName=_.name)
+            tmpData = initColumnValueDB(pluginName=_.pluginName, asset_id=self.id, columnName=_.name)
             if tmpData and tmpData[0]is not None:
                 container = containerObj.from_dict(tmpData[0])
             else:

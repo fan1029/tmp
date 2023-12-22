@@ -2,7 +2,6 @@ from plugins.BasePlugin import BasePlugin
 import multiprocessing
 from plugins.Plugin_Goby.common import runScan, checkProgress, getStatisticsData, assetSearch, stopScan, dataStore
 # from services.plugin_screenshot.main import runFromPythonImport
-from core.rowManager import RowManagerProxy
 from type.elements import Tag, Text, Popover, Action, TagAttribute, TextAttribute
 from type.enums import SIZE, TAG_THEME, TAG_ROUND, TEXT_TYPE, TEXT_TAG
 from core.asset import Asset

@@ -290,7 +290,7 @@ async def getAssetData2(data: GetTagAssetDataRequest):
     '''
     获取指定tag标签内的所有资产数据，支持翻页，size为每页的数量，page为页数,sort排序方式，asc为升序，desc为降序
     :return:
-    '''
+'''
     if data.tag_id == -1:
         # 根据tag_name获取tag_id
         with PostgresConnectionContextManager() as cur:
@@ -310,33 +310,44 @@ async def getAssetData2(data: GetTagAssetDataRequest):
     pm = PluginManager()
     if not data.current_table:
         # data.current_table = getProjectUsedPlugins(data.project_id)
-        data.current_table = ['plugin_goby']
-    table = Table(data.current_table)
-    query = f"""
-    SELECT asset_name,id,original_assets FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_name {data.sort} LIMIT %s OFFSET %s 
-    """
-    with PostgresConnectionContextManager() as cur:
-        # 参数只包含数据值
-        params = (data.project_id, data.tag_id, data.size, (data.page - 1) * data.size)
-        cur.execute(query, params)
-        rows = cur.fetchall()
-    if rows:
-        # print(rows)
-        for _ in rows:
-            row = Row(_[0], _[1], _[2], table.getColumnList())
-            table.addRow(row)
-    resData = table.generateTable()
-    query = "SELECT count(id) FROM asset WHERE project_id = %s AND %s = ANY(tag_ids)"
-    with PostgresConnectionContextManager() as cur:
-        # 参数只包含数据值
-        params = (data.project_id, data.tag_id)
-        cur.execute(query, params)
-        rows = cur.fetchone()
-        total = rows[0]
-    tmpdata = deepcopy(data.__dict__)
-    tmpdata['total'] = total
+        data.current_table = ['plugin_goby_table']
 
-    return GetTagAssetDataResponse(True, resData, 'ok', tmpdata)
+    base_query = "SELECT row_to_json(t) FROM(SELECT asset.*, {table_columns} FROM asset {joins} "
+    joins = []
+    table_columns = []
+    for table in data.current_table:
+        joins.append(f"LEFT JOIN {table} ON asset.id = {table}.asset_id")
+        table_columns.append(f"{table}.*")
+
+    joins_str = ' '.join(joins)
+    table_columns_str = ', '.join(table_columns)
+    offset = (data.page - 1) * data.size
+    query = base_query.format(table_columns=table_columns_str, joins=joins_str)
+    query += f"WHERE asset.project_id = {data.project_id} AND {data.tag_id} = ANY(asset.tag_ids) ORDER BY asset.id {data.sort} LIMIT {data.size} OFFSET {offset})t"
+    column = []
+    rows = []
+    with PostgresConnectionContextManager() as cur:
+        # 获取column_attribute表
+        cur.execute("SELECT row_to_json(t) FROM (SELECT * FROM column_attribute)t ")
+        columnRes = cur.fetchall()
+        for _ in columnRes:
+            if _[0]['plugin_name'] in data.current_table:
+                column.append(_[0])
+        cur.execute(query)
+        rowsTmp = cur.fetchall()
+        pm.getPluginTableList()
+        if rowsTmp:
+            for _ in rowsTmp:
+                rows.append(_[0])
+        cur.execute("SELECT COUNT(*) FROM asset WHERE %s = ANY(tag_ids)", (data.tag_id,))
+        rowsNum = cur.fetchone()
+        total = rowsNum[0]
+    for _ in rows:
+        for k,v in _.items():
+            if v is None:
+                _[k] = {"style":{"size":"small","round":True,"theme":""},"values":[],"className":"","elementType":""}
+
+    return {"data": {"column": column, "rows": rows}, "total": total, "msg": "ok"}
 
 
 async def getAssetDataFunc(data: GetTagAssetDataRequest):
@@ -359,7 +370,7 @@ async def getAssetDataFunc(data: GetTagAssetDataRequest):
     pm = PluginManager()
     if not data.current_table:
         # data.current_table = getProjectUsedPlugins(data.project_id)
-        data.current_table = ['plugin_goby','plugin_screenshot']
+        data.current_table = ['plugin_goby', 'plugin_screenshot']
     table = Table(data.current_table)
     query = f"""
     SELECT asset_name,id,original_assets FROM asset WHERE project_id = %s AND %s = ANY(tag_ids) ORDER BY asset.asset_name {data.sort} LIMIT %s OFFSET %s 
@@ -388,6 +399,63 @@ async def getAssetDataFunc(data: GetTagAssetDataRequest):
     return (True, resData, 'ok', tmpdata)
 
 
+async def getAssetDataFunc2(data: GetTagAssetDataRequest):
+    if data.tag_id == -1:
+        # 根据tag_name获取tag_id
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT id FROM taginfo WHERE tag_name=%s AND project_id=%s", (data.tag_name, data.project_id))
+            rows = cur.fetchone()
+            data.tag_id = rows[0]
+    if data.tag_name == '':
+        with PostgresConnectionContextManager() as cur:
+            cur.execute("SELECT tag_name FROM taginfo WHERE id=%s AND project_id=%s", (data.tag_id, data.project_id))
+            rows = cur.fetchone()
+            data.tag_name = rows[0]
+    a1 = sqlInjectCheck(data.sortColumn)
+    a2 = sqlInjectCheck(data.sort)
+    if not a1 or not a2:
+        return GetTagAssetDataResponse(False, [], 'sql注入', data)
+    from core.pluginManager import PluginManager
+    pm = PluginManager()
+    if not data.current_table:
+
+        data.current_table = ['plugin_goby','plugin_screenshot']
+    base_query = "SELECT row_to_json(t) FROM(SELECT asset.*, {table_columns} FROM asset {joins} "
+    joins = []
+    table_columns = []
+    for table in data.current_table:
+        joins.append(f"LEFT JOIN {table}_table ON asset.id = {table}_table.asset_id")
+        table_columns.append(f"{table}_table.*")
+
+    joins_str = ' '.join(joins)
+    table_columns_str = ', '.join(table_columns)
+    offset = (data.page - 1) * data.size
+    query = base_query.format(table_columns=table_columns_str, joins=joins_str)
+    query += f"WHERE asset.project_id = {data.project_id} AND {data.tag_id} = ANY(asset.tag_ids) ORDER BY asset.id {data.sort} LIMIT {data.size} OFFSET {offset})t"
+    column = []
+    rows = []
+    with PostgresConnectionContextManager() as cur:
+        # 获取column_attribute表
+        cur.execute("SELECT row_to_json(t) FROM (SELECT * FROM column_attribute)t ")
+        columnRes = cur.fetchall()
+        for _ in columnRes:
+            if _[0]['plugin_name'] in data.current_table:
+                column.append(_[0])
+        cur.execute(query)
+        rowsTmp = cur.fetchall()
+        pm.getPluginTableList()
+        if rowsTmp:
+            for _ in rowsTmp:
+                rows.append(_[0])
+        cur.execute("SELECT COUNT(*) FROM asset WHERE %s = ANY(tag_ids)", (data.tag_id,))
+        rowsNum = cur.fetchone()
+        total = rowsNum[0]
+    for _ in rows:
+        for k,v in _.items():
+            if v is None:
+                _[k] = {"style":{"size":"small","round":True,"theme":""},"values":[],"className":"","elementType":""}
+
+    return {"data": {"column": column, "rows": rows}, "total": total, "msg": "ok"}
 
 
 @tag_blue.websocket('/syncTable')
@@ -404,27 +472,27 @@ async def syncTable():
                                       size=dataJson['size'], page=dataJson['page'], sortColumn=dataJson['sortColumn'],
                                       sort=dataJson['sort'],
                                       current_table=dataJson['current_table'])
-        tableData = await getAssetDataFunc(data)
-        # runningMsgIdList = await AioRedisManager().get_redis().lrange('assetRunning', 0, -1)
-        # for _ in tableData[1]['rows']:
-        #     res = await AioRedisManager().get_redis().hget('pluginTaskProgress', _['id'])
-        #     _['runningInfo'] = []
-        #     if res:
-        #         resList = json.loads(res)
-        #         for _2 in resList:
-        #             res = _2.split('@')
-        #             msgId = res[0]
-        #             pluginName = res[1]
-        #             if msgId in runningMsgIdList:
-        #                 running = True
-        #             else:
-        #                 running = False
-        #             _['runningInfo'].append({"runningPlugin": pluginName, "running": running, "msgId": msgId})
-        #     else:
-        #         _['runningInfo'] = []
+        tableData = await getAssetDataFunc2(data)
+        # 运行状态检测
+        runningMsgIdList = await AioRedisManager().get_redis().lrange('assetRunning', 0, -1)
+        for _ in tableData["data"]['rows']:
+            res = await AioRedisManager().get_redis().hget('pluginTaskProgress', _['id'])
+            _['runningInfo'] = []
+            if res:
+                resList = json.loads(res)
+                for _2 in resList:
+                    res = _2.split('@')
+                    msgId = res[0]
+                    pluginName = res[1]
+                    if msgId in runningMsgIdList:
+                        running = True
+                    else:
+                        running = False
+                    _['runningInfo'].append({"runningPlugin": pluginName, "running": running, "msgId": msgId})
+            else:
+                _['runningInfo'] = []
 
-        result = {"status": tableData[0], "data": tableData[1], "msg": tableData[2], "info": tableData[3]}
-        await websocket.send(json.dumps(result))
+        await websocket.send(json.dumps(tableData))
 
 
 def filter_url(url):
@@ -510,7 +578,8 @@ async def addAssetToTag(data: addAssetToTagRequest):
                 # 如果不存在asset则使用insert插入表中
                 cur.execute(
                     "INSERT INTO asset (asset_name,project_id,tag_ids,original_assets,asset_type,label) VALUES (%s,%s,%s,%s,%s,%s)",
-                    (asset['asset_name'], data.project_id, [data.tag_id], asset['original_assets'],asset['type'],[asset['type']]))
+                    (asset['asset_name'], data.project_id, [data.tag_id], asset['original_assets'], asset['type'],
+                     [asset['type']]))
 
     return {'status': True, 'msg': 'ok', 'data': data}
 
@@ -520,6 +589,7 @@ class deleteAssetFromTagRequest:
     project_id: int
     tag_id: int
     asset_id: int
+
 
 @tag_blue.post('/deleteAssetFromTag')
 @validate_request(deleteAssetFromTagRequest)
@@ -539,7 +609,3 @@ async def deleteAssetFromTag(data: deleteAssetFromTagRequest):
         cur.execute("UPDATE asset SET tag_ids = array_remove(tag_ids,%s) WHERE asset_name = %s AND project_id=%s",
                     (data.tag_id, asset_name, data.project_id))
     return {'status': True, 'msg': 'ok', 'data': data}
-
-
-
-

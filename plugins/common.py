@@ -126,7 +126,7 @@ def registerAssetNew(target: str, assetId: Union[int, str]) -> None:
     RedisMixin().redis_db_service.hset('asset_target_Map', target, assetId)
 
 
-def addAssetOriginalToTable(pluginName, asset_origianl):
+def addAssetOriginalToTable(pluginName, asset_id:int):
     '''
     添加到pluginname_table表中。对于前端表格内数据的更新
     :param asset_origianl:
@@ -134,8 +134,8 @@ def addAssetOriginalToTable(pluginName, asset_origianl):
     '''
     pluginName = pluginName.lower()
     with PostgresConnectionContextManager() as cur:
-        cur.execute("SELECT asset_original FROM " + pluginName +
-                    "_table WHERE asset_original=%s", (asset_origianl,))
+        cur.execute("SELECT asset_id FROM " + pluginName +
+                    "_table WHERE asset_id=%s", (asset_id,))
         rows = cur.fetchone()
         if rows:
             return False
@@ -143,10 +143,11 @@ def addAssetOriginalToTable(pluginName, asset_origianl):
             cur.execute(
                 "INSERT INTO " +
                 pluginName +
-                "_table (asset_original) VALUES (%s)",
-                (asset_origianl,
+                "_table (asset_id) VALUES (%s)",
+                (asset_id,
                  ))
             return True
+
 
 
 def checkAndCreatePlutinTable(sql: str, pluginName: str):
