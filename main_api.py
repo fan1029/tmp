@@ -5,6 +5,7 @@ from quart_schema import QuartSchema
 from api.project import project_blue
 from api.tags import tag_blue
 from api.service import service_blue
+from api.note import note_blue
 from quart_cors import cors
 from utils.redis_manager import AioRedisManager
 from core.notify import Notify
@@ -15,6 +16,7 @@ app = cors(app, allow_origin='*')
 app.register_blueprint(project_blue)
 app.register_blueprint(tag_blue)
 app.register_blueprint(service_blue)
+app.register_blueprint(note_blue)
 QuartSchema(app)
 # redis = RedisMixin().redis_db_service
 redis = AioRedisManager().get_redis()
