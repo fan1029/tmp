@@ -186,3 +186,7 @@ asset_id作为主键
 其他是这个插件有的列名 jsonb格式
 
 ![image-20240202220647946](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202220647946.png?raw=true)
+
+同时前往数据库column_attribute按照格式把你的列添加进去就行
+
+```
