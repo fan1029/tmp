@@ -1,13 +1,11 @@
-import json
 import asyncio
 import nb_log
 from playwright.async_api import async_playwright
 from pluginService.lifeCycleFuntion_manager import LifeCycle
 from pluginService.plugin_service import PlguinService
-import multiprocessing
 import random
 import base64
-import time
+
 
 pluginConfig = {
     'pluginName': 'plugin_screenshot',
@@ -63,15 +61,6 @@ def toolInit():
 def toolRun(targets: list, config: dict):
     asyncio.run(main(targets, ))
     print('finish')
-    # p1 = multiprocessing.Process(target=runTool, args=(targets,))
-    # p1.start()
-    # p1.join()
-    # while True:
-    #     if not p1.is_alive():
-    #         break
-    #     else:
-    #         time.sleep(6)
-
 
 
 def reg():

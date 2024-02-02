@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2 import pool
-import time
+from serviceConfig import POSTGRES_DB, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT
 
 class PostgresConnectionPool:
 
@@ -51,7 +51,7 @@ class PostgresConnectionPool:
 
 
 # 写一个上面数据库连接类的上下文管理类
-pool1= PostgresConnectionPool(2, 300, "dev", "postgres", "123456", "localhost", "5432")
+pool1= PostgresConnectionPool(2, 300, POSTGRES_DB, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT)
 class PostgresConnectionContextManager:
     def __init__(self):
         self.pool = pool1
