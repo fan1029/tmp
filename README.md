@@ -8,21 +8,21 @@
 
 ## 使用效果
 
-![image-20240202205355406](D:\OneDrive\note\README.assets\image-20240202205355406.png)
+![image-20240202205355406](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202205355406.png?raw=true)
 
 点击资产旁边的小本本调用笔记本功能
 
-![image-20240202220843722](D:\OneDrive\note\README.assets\image-20240202220843722.png)
+![image-20240202220843722](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202220843722.png?raw=true)
 
 右键一键调用插件，你可以将你喜欢的插件集成进来。
 
-![image-20240202205405586](D:\OneDrive\note\README.assets\image-20240202205405586.png)
+![image-20240202205405586](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202205405586.png?raw=true)
 
-![image-20240202205434238](D:\OneDrive\note\README.assets\image-20240202205434238.png)
+![image-20240202205434238](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202205434238.png?raw=true)
 
 中间打开控制面板可以控制各个消费端开启关闭。可以精准控制每台机器上执行什么插件什么任务。
 
-![image-20240202205621767](D:\OneDrive\note\README.assets\image-20240202205621767.png)
+![image-20240202205621767](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202205621767.png?raw=true)
 
 
 
@@ -43,6 +43,7 @@ main_plugin  插件回调端
 client_plugin_manager.py  插件消费端
 
 请确保每个插件消费端的网能连接到redis
+消费端单独运行要把service放到同目录下 才能调用里面的插件运行
 
 
 
@@ -148,7 +149,7 @@ service = PlguinService(pluginConfig)
 targets就是发过来的目标
 ```
 
-![image-20240202215847562](D:\OneDrive\note\README.assets\image-20240202215847562.png)
+![image-20240202215847562](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202215847562.png?raw=true)
 
 
 
@@ -184,4 +185,4 @@ asset_id作为主键
 
 其他是这个插件有的列名 jsonb格式
 
-![image-20240202220647946](D:\OneDrive\note\README.assets\image-20240202220647946.png)
+![image-20240202220647946](https://github.com/fan1029/tmp/blob/master/README.assets/image-20240202220647946.png?raw=true)
